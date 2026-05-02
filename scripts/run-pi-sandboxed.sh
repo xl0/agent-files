@@ -13,8 +13,8 @@ print_help() {
 Usage: $prog_name [--no-net] [--runtime-dir] [--writable PATH ...] [PI_ARG ...]
        $prog_name [--no-net] [--runtime-dir] [--writable PATH ...] [-- COMMAND [ARG ...]]
 
-Runs COMMAND in bubblewrap. Defaults to 'pi'.
-Bare args starting with '-' are passed to 'pi' directly.
+Runs 'pi' in bubblewrap by default.
+Use '-- COMMAND ...' to run something other than 'pi'.
 
 Bubblewrap setup:
 - host / mounted read-only
@@ -34,6 +34,7 @@ Examples:
   $prog_name
   $prog_name --no-net
   $prog_name --model gpt-5
+  $prog_name "prompt here"
   $prog_name --runtime-dir -- pi
 EOF
 }
@@ -76,7 +77,7 @@ done
 
 if [ "$#" -eq 0 ]; then
   set -- pi
-elif [[ "$1" == -* ]]; then
+else
   set -- pi "$@"
 fi
 

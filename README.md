@@ -10,8 +10,8 @@ Combine the `AGENTS*.md` files as you need them. As few or as many as you want.
 
 `scripts/run-pi-sandboxed.sh` provides a simple bubblewrap (https://github.com/containers/bubblewrap)
 
-It mounds / as read-only, and ~/.pi as rw, and runs pi inside the sandbox. Very easy, reasonably secure.
-Escape is not impossible (especially with network not blocked), but it will protect against all sorts of oopsies.
+It mounts / read-only, keeps ~/.pi writable, and runs pi inside the sandbox. Very easy, reasonably secure.
+Escape is not impossible (especially with network not blocked), but it protects against lots of oopsies.
 
 Copy it somewhere in your $PATH: `cp scripts/run-pi-sandboxed.sh ~/.local/bin/`
 
@@ -19,8 +19,8 @@ Copy it somewhere in your $PATH: `cp scripts/run-pi-sandboxed.sh ~/.local/bin/`
 Usage: scripts/run-pi-sandboxed.sh [--no-net] [--runtime-dir] [--writable PATH ...] [PI_ARG ...]
        scripts/run-pi-sandboxed.sh [--no-net] [--runtime-dir] [--writable PATH ...] [-- COMMAND [ARG ...]]
 
-Runs COMMAND in bubblewrap. Defaults to `pi`.
-Bare args starting with `-` are passed to `pi` directly.
+Runs `pi` in bubblewrap by default.
+Use `-- COMMAND ...` to run something other than `pi`.
 
 Bubblewrap setup:
 - host / mounted read-only
@@ -40,5 +40,6 @@ Examples:
   scripts/run-pi-sandboxed.sh
   scripts/run-pi-sandboxed.sh --no-net
   scripts/run-pi-sandboxed.sh --model gpt-5
+  scripts/run-pi-sandboxed.sh "prompt here"
   scripts/run-pi-sandboxed.sh --runtime-dir -- pi
 ```
