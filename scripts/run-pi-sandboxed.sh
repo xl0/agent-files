@@ -10,8 +10,8 @@ fi
 
 print_help() {
   cat >&2 <<EOF
-Usage: $prog_name [--no-ssh] [--runtime-dir] [--writable PATH ...] [PI_ARG ...]
-       $prog_name [--no-ssh] [--runtime-dir] [--writable PATH ...] [-- COMMAND [ARG ...]]
+Usage: $prog_name [--no-ssh] [--no-runtime] [--writable PATH ...] [PI_ARG ...]
+       $prog_name [--no-ssh] [--no-runtime] [--writable PATH ...] [-- COMMAND [ARG ...]]
 
 Runs 'pi' in bubblewrap by default.
 Use '-- COMMAND ...' to run something other than 'pi'.
@@ -22,11 +22,12 @@ Bubblewrap setup:
 - private /tmp
 - network allowed by default
 - ~/.pi mounted read-write by default
-- XDG runtime dir hidden by default
+- XDG runtime dir mounted read-only by default
 
 Options:
   --no-ssh           hide ~/.ssh with an empty tmpfs
-  --runtime-dir      mount XDG_RUNTIME_DIR read-only if present
+  --no-runtime       hide XDG_RUNTIME_DIR (/run/user/<uid>) with an empty tmpfs
+                     default: mount XDG_RUNTIME_DIR read-only if present
   --writable PATH    extra host path to mount read-write
   --help             show this help
 
@@ -35,13 +36,14 @@ Examples:
   $prog_name --no-ssh
   $prog_name --model gpt-5
   $prog_name "prompt here"
-  $prog_name --runtime-dir -- pi
+  $prog_name --no-runtime -- pi
 EOF
 }
 
 hide_ssh=0
-mount_runtime_dir=0
+hide_runtime_dir=0
 extra_writable=()
+command_mode=0
 
 while [ "$#" -gt 0 ]; do
   case "$1" in
@@ -49,8 +51,8 @@ while [ "$#" -gt 0 ]; do
       hide_ssh=1
       shift
       ;;
-    --runtime-dir)
-      mount_runtime_dir=1
+    --no-runtime)
+      hide_runtime_dir=1
       shift
       ;;
     --writable)
@@ -66,6 +68,7 @@ while [ "$#" -gt 0 ]; do
       exit 0
       ;;
     --)
+      command_mode=1
       shift
       break
       ;;
@@ -75,7 +78,12 @@ while [ "$#" -gt 0 ]; do
   esac
 done
 
-if [ "$#" -eq 0 ]; then
+if [ "$command_mode" -eq 1 ]; then
+  [ "$#" -gt 0 ] || {
+    echo "-- requires a command" >&2
+    exit 1
+  }
+elif [ "$#" -eq 0 ]; then
   set -- pi
 else
   set -- pi "$@"
@@ -108,10 +116,10 @@ if [ -n "$home_dir" ] && [ -d "$home_dir" ]; then
 fi
 
 if [ -n "$xdg_runtime_dir" ] && [ -d "$xdg_runtime_dir" ]; then
-  if [ "$mount_runtime_dir" -eq 1 ]; then
-    args+=(--ro-bind "$xdg_runtime_dir" "$xdg_runtime_dir")
-  else
+  if [ "$hide_runtime_dir" -eq 1 ]; then
     args+=(--tmpfs "$xdg_runtime_dir")
+  else
+    args+=(--ro-bind "$xdg_runtime_dir" "$xdg_runtime_dir")
   fi
 fi
 

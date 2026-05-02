@@ -16,8 +16,8 @@ Escape is not impossible, but it protects against lots of oopsies.
 Copy it somewhere in your $PATH: `cp scripts/run-pi-sandboxed.sh ~/.local/bin/`
 
 ```
-Usage: scripts/run-pi-sandboxed.sh [--no-ssh] [--runtime-dir] [--writable PATH ...] [PI_ARG ...]
-       scripts/run-pi-sandboxed.sh [--no-ssh] [--runtime-dir] [--writable PATH ...] [-- COMMAND [ARG ...]]
+Usage: scripts/run-pi-sandboxed.sh [--no-ssh] [--no-runtime] [--writable PATH ...] [PI_ARG ...]
+       scripts/run-pi-sandboxed.sh [--no-ssh] [--no-runtime] [--writable PATH ...] [-- COMMAND [ARG ...]]
 
 Runs `pi` in bubblewrap by default.
 Use `-- COMMAND ...` to run something other than `pi`.
@@ -28,11 +28,12 @@ Bubblewrap setup:
 - private /tmp
 - network allowed by default
 - ~/.pi mounted read-write by default
-- XDG runtime dir hidden by default
+- XDG runtime dir mounted read-only by default
 
 Options:
   --no-ssh           hide ~/.ssh with an empty tmpfs
-  --runtime-dir      mount XDG_RUNTIME_DIR read-only if present
+  --no-runtime       hide XDG_RUNTIME_DIR with an empty tmpfs
+                     default: mount XDG_RUNTIME_DIR read-only if present
   --writable PATH    extra host path to mount read-write
   --help             show this help
 
@@ -41,5 +42,6 @@ Examples:
   scripts/run-pi-sandboxed.sh --no-ssh
   scripts/run-pi-sandboxed.sh --model gpt-5
   scripts/run-pi-sandboxed.sh "prompt here"
-  scripts/run-pi-sandboxed.sh --runtime-dir -- pi
+  scripts/run-pi-sandboxed.sh --no-runtime -- pi
+  scripts/run-pi-sandboxed.sh -- bash -lc 'uname -a'
 ```
