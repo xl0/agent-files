@@ -10,8 +10,8 @@ fi
 
 print_help() {
   cat >&2 <<EOF
-Usage: $prog_name [--no-net] [--runtime-dir] [--writable PATH ...] [PI_ARG ...]
-       $prog_name [--no-net] [--runtime-dir] [--writable PATH ...] [-- COMMAND [ARG ...]]
+Usage: $prog_name [--no-ssh] [--runtime-dir] [--writable PATH ...] [PI_ARG ...]
+       $prog_name [--no-ssh] [--runtime-dir] [--writable PATH ...] [-- COMMAND [ARG ...]]
 
 Runs 'pi' in bubblewrap by default.
 Use '-- COMMAND ...' to run something other than 'pi'.
@@ -25,28 +25,28 @@ Bubblewrap setup:
 - XDG runtime dir hidden by default
 
 Options:
-  --no-net           disable network access
+  --no-ssh           hide ~/.ssh with an empty tmpfs
   --runtime-dir      mount XDG_RUNTIME_DIR read-only if present
   --writable PATH    extra host path to mount read-write
   --help             show this help
 
 Examples:
   $prog_name
-  $prog_name --no-net
+  $prog_name --no-ssh
   $prog_name --model gpt-5
   $prog_name "prompt here"
   $prog_name --runtime-dir -- pi
 EOF
 }
 
-allow_net=1
+hide_ssh=0
 mount_runtime_dir=0
 extra_writable=()
 
 while [ "$#" -gt 0 ]; do
   case "$1" in
-    --no-net)
-      allow_net=0
+    --no-ssh)
+      hide_ssh=1
       shift
       ;;
     --runtime-dir)
@@ -97,14 +97,14 @@ args=(
   --chdir "$repo_dir"
 )
 
-if [ "$allow_net" -eq 0 ]; then
-  args+=(--unshare-net)
-fi
-
 if [ -n "$home_dir" ] && [ -d "$home_dir" ]; then
   pi_home_dir="$home_dir/.pi"
   mkdir -p "$pi_home_dir"
   extra_writable+=("$pi_home_dir")
+
+  if [ "$hide_ssh" -eq 1 ] && [ -e "$home_dir/.ssh" ]; then
+    args+=(--tmpfs "$home_dir/.ssh")
+  fi
 fi
 
 if [ -n "$xdg_runtime_dir" ] && [ -d "$xdg_runtime_dir" ]; then
