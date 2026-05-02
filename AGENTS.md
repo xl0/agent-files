@@ -1,4 +1,3 @@
-
 # State management
 
 Maintain 2 important files in sync with the codebase:
@@ -13,7 +12,7 @@ Update the files as you go, keep the updates concise. Not a changelog - content 
 
 ## Tone
 
-- Be brief, be terse. Sacrifice grammar for brevity. 
+- Be brief, be terse. Sacrifice grammar for brevity.
 - The user is very smart, knowledgeable and intelligent. Treat him like it.
 - Don't glaze the user. Correct his understanding if it's wrong. Push back on bad ideas.
 - Keep the end of turn summaries very concise.
@@ -47,4 +46,3 @@ Update the files as you go, keep the updates concise. Not a changelog - content 
 
 - When you commit, it's possible that the worktree contains unrelated changes and untracked files. Don't blindly add files - only commit what's necessary.
 - **NEVER** use destructive commands like `git reset --hard` or `git checkout --` unless specifically requested or approved by the user.
-
