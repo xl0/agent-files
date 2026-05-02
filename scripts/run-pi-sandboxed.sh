@@ -10,9 +10,11 @@ fi
 
 print_help() {
   cat >&2 <<EOF
-Usage: $prog_name [--no-net] [--runtime-dir] [--writable PATH ...] [-- COMMAND [ARG ...]]
+Usage: $prog_name [--no-net] [--runtime-dir] [--writable PATH ...] [PI_ARG ...]
+       $prog_name [--no-net] [--runtime-dir] [--writable PATH ...] [-- COMMAND [ARG ...]]
 
 Runs COMMAND in bubblewrap. Defaults to 'pi'.
+Bare args starting with '-' are passed to 'pi' directly.
 
 Bubblewrap setup:
 - host / mounted read-only
@@ -31,6 +33,7 @@ Options:
 Examples:
   $prog_name
   $prog_name --no-net
+  $prog_name --model gpt-5
   $prog_name --runtime-dir -- pi
 EOF
 }
@@ -66,13 +69,16 @@ while [ "$#" -gt 0 ]; do
       break
       ;;
     *)
-      echo "Unknown option: $1" >&2
-      exit 1
+      break
       ;;
   esac
 done
 
-[ "$#" -gt 0 ] || set -- pi
+if [ "$#" -eq 0 ]; then
+  set -- pi
+elif [[ "$1" == -* ]]; then
+  set -- pi "$@"
+fi
 
 repo_dir=$(pwd -P)
 home_dir=${HOME:-}

@@ -16,9 +16,11 @@ Escape is not impossible (especially with network not blocked), but it will prot
 Copy it somewhere in your $PATH: `cp scripts/run-pi-sandboxed.sh ~/.local/bin/`
 
 ```
-Usage: scripts/run-pi-sandboxed.sh [--no-net] [--runtime-dir] [--writable PATH ...] [-- COMMAND [ARG ...]]
+Usage: scripts/run-pi-sandboxed.sh [--no-net] [--runtime-dir] [--writable PATH ...] [PI_ARG ...]
+       scripts/run-pi-sandboxed.sh [--no-net] [--runtime-dir] [--writable PATH ...] [-- COMMAND [ARG ...]]
 
 Runs COMMAND in bubblewrap. Defaults to `pi`.
+Bare args starting with `-` are passed to `pi` directly.
 
 Bubblewrap setup:
 - host / mounted read-only
@@ -37,5 +39,6 @@ Options:
 Examples:
   scripts/run-pi-sandboxed.sh
   scripts/run-pi-sandboxed.sh --no-net
+  scripts/run-pi-sandboxed.sh --model gpt-5
   scripts/run-pi-sandboxed.sh --runtime-dir -- pi
 ```
