@@ -10,8 +10,8 @@ fi
 
 print_help() {
   cat >&2 <<EOF
-Usage: $prog_name [--no-ssh] [--no-runtime] [--writable PATH ...] [PI_ARG ...]
-       $prog_name [--no-ssh] [--no-runtime] [--writable PATH ...] [-- COMMAND [ARG ...]]
+Usage: $prog_name [--no-ssh] [--no-runtime] [--no-bun] [--writable PATH ...] [PI_ARG ...]
+       $prog_name [--no-ssh] [--no-runtime] [--no-bun] [--writable PATH ...] [-- COMMAND [ARG ...]]
 
 Runs 'pi' in bubblewrap by default.
 Use '-- COMMAND ...' to run something other than 'pi'.
@@ -22,12 +22,14 @@ Bubblewrap setup:
 - private /tmp
 - network allowed by default
 - ~/.pi mounted read-write by default
+- ~/.bun mounted read-write by default
 - XDG runtime dir mounted read-only by default
 
 Options:
   --no-ssh           hide ~/.ssh with an empty tmpfs
   --no-runtime       hide XDG_RUNTIME_DIR (/run/user/<uid>) with an empty tmpfs
                      default: mount XDG_RUNTIME_DIR read-only if present
+  --no-bun           hide ~/.bun; default: mount ~/.bun read-write if HOME exists
   --writable PATH    extra host path to mount read-write
   --help             show this help
 
@@ -37,11 +39,13 @@ Examples:
   $prog_name --model gpt-5
   $prog_name "prompt here"
   $prog_name --no-runtime -- pi
+  $prog_name --no-bun
 EOF
 }
 
 hide_ssh=0
 hide_runtime_dir=0
+hide_bun=0
 extra_writable=()
 command_mode=0
 
@@ -53,6 +57,10 @@ while [ "$#" -gt 0 ]; do
       ;;
     --no-runtime)
       hide_runtime_dir=1
+      shift
+      ;;
+    --no-bun)
+      hide_bun=1
       shift
       ;;
     --writable)
@@ -109,6 +117,12 @@ if [ -n "$home_dir" ] && [ -d "$home_dir" ]; then
   pi_home_dir="$home_dir/.pi"
   mkdir -p "$pi_home_dir"
   extra_writable+=("$pi_home_dir")
+
+  if [ "$hide_bun" -eq 0 ]; then
+    bun_home_dir="$home_dir/.bun"
+    mkdir -p "$bun_home_dir"
+    extra_writable+=("$bun_home_dir")
+  fi
 
   if [ "$hide_ssh" -eq 1 ] && [ -e "$home_dir/.ssh" ]; then
     args+=(--tmpfs "$home_dir/.ssh")
