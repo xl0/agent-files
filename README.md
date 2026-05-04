@@ -1,10 +1,26 @@
-Copy files from this directory to your project directory as needed.
+# Why
+
+First, this repo is for my own reference. You are welcome to ride along.
+
+For each new project, I copy stuff from here to the project.
+I don't use global skills/AGENTS.md/etc, everything is per-project.
 
 ## AGENTS.md
 
 Combine the `AGENTS*.md` files as you need them. As few or as many as you want.
 
 `cat AGENTS.md AGENTS-svelte.md AGENTS-lovely-docs.md > /path/to/new/project/AGENTS.md`
+
+Then edit the new `AGENTS.md`, and optionally feed the edits back here if they are good.
+
+# Pi
+
+## Packages to install:
+
+# Show rendered system prompt & tool schemas (good for developing modules with new tools)
+```bash
+pi install -l https://github.com/xl0/pi-agent-show-sysprompt
+```
 
 ## Sandbox with bwrap (Linux only)
 
