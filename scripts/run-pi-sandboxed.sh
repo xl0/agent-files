@@ -10,8 +10,8 @@ fi
 
 print_help() {
   cat >&2 <<EOF
-Usage: $prog_name [--no-ssh] [--no-runtime] [--no-bun] [--writable PATH ...] [PI_ARG ...]
-       $prog_name [--no-ssh] [--no-runtime] [--no-bun] [--writable PATH ...] [-- COMMAND [ARG ...]]
+Usage: $prog_name [--no-ssh] [--no-runtime] [--no-bun] [--no-cache] [--writable PATH ...] [PI_ARG ...]
+       $prog_name [--no-ssh] [--no-runtime] [--no-bun] [--no-cache] [--writable PATH ...] [-- COMMAND [ARG ...]]
 
 Runs 'pi' in bubblewrap by default.
 Use '-- COMMAND ...' to run something other than 'pi'.
@@ -23,6 +23,7 @@ Bubblewrap setup:
 - network allowed by default
 - ~/.pi mounted read-write by default
 - ~/.bun mounted read-write by default
+- ~/.cache mounted read-write by default
 - XDG runtime dir mounted read-only by default
 
 Options:
@@ -30,6 +31,7 @@ Options:
   --no-runtime       hide XDG_RUNTIME_DIR (/run/user/<uid>) with an empty tmpfs
                      default: mount XDG_RUNTIME_DIR read-only if present
   --no-bun           hide ~/.bun; default: mount ~/.bun read-write if HOME exists
+  --no-cache         hide ~/.cache; default: mount ~/.cache read-write if HOME exists
   --writable PATH    extra host path to mount read-write
   --help             show this help
 
@@ -40,12 +42,14 @@ Examples:
   $prog_name "prompt here"
   $prog_name --no-runtime -- pi
   $prog_name --no-bun
+  $prog_name --no-cache
 EOF
 }
 
 hide_ssh=0
 hide_runtime_dir=0
 hide_bun=0
+hide_cache=0
 extra_writable=()
 command_mode=0
 
@@ -61,6 +65,10 @@ while [ "$#" -gt 0 ]; do
       ;;
     --no-bun)
       hide_bun=1
+      shift
+      ;;
+    --no-cache)
+      hide_cache=1
       shift
       ;;
     --writable)
@@ -122,6 +130,16 @@ if [ -n "$home_dir" ] && [ -d "$home_dir" ]; then
     bun_home_dir="$home_dir/.bun"
     mkdir -p "$bun_home_dir"
     extra_writable+=("$bun_home_dir")
+  fi
+
+  cache_home_dir="$home_dir/.cache"
+  if [ "$hide_cache" -eq 1 ]; then
+    if [ -e "$cache_home_dir" ]; then
+      args+=(--tmpfs "$cache_home_dir")
+    fi
+  else
+    mkdir -p "$cache_home_dir"
+    extra_writable+=("$cache_home_dir")
   fi
 
   if [ "$hide_ssh" -eq 1 ] && [ -e "$home_dir/.ssh" ]; then

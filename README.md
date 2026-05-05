@@ -26,14 +26,14 @@ pi install -l https://github.com/xl0/pi-agent-show-sysprompt
 
 `scripts/run-pi-sandboxed.sh` provides a simple bubblewrap (https://github.com/containers/bubblewrap)
 
-It mounts / read-only, keeps ~/.pi and ~/.bun writable by default, and runs pi inside the sandbox. Very easy, reasonably secure.
+It mounts / read-only, keeps ~/.pi, ~/.bun, and ~/.cache writable by default, and runs pi inside the sandbox. Very easy, reasonably secure.
 Escape is not impossible, but it protects against lots of oopsies.
 
 Copy it somewhere in your $PATH: `cp scripts/run-pi-sandboxed.sh ~/.local/bin/`
 
 ```
-Usage: scripts/run-pi-sandboxed.sh [--no-ssh] [--no-runtime] [--no-bun] [--writable PATH ...] [PI_ARG ...]
-       scripts/run-pi-sandboxed.sh [--no-ssh] [--no-runtime] [--no-bun] [--writable PATH ...] [-- COMMAND [ARG ...]]
+Usage: scripts/run-pi-sandboxed.sh [--no-ssh] [--no-runtime] [--no-bun] [--no-cache] [--writable PATH ...] [PI_ARG ...]
+       scripts/run-pi-sandboxed.sh [--no-ssh] [--no-runtime] [--no-bun] [--no-cache] [--writable PATH ...] [-- COMMAND [ARG ...]]
 
 Runs `pi` in bubblewrap by default.
 Use `-- COMMAND ...` to run something other than `pi`.
@@ -45,6 +45,7 @@ Bubblewrap setup:
 - network allowed by default
 - ~/.pi mounted read-write by default
 - ~/.bun mounted read-write by default
+- ~/.cache mounted read-write by default
 - XDG runtime dir mounted read-only by default
 
 Options:
@@ -52,6 +53,7 @@ Options:
   --no-runtime       hide XDG_RUNTIME_DIR with an empty tmpfs
                      default: mount XDG_RUNTIME_DIR read-only if present
   --no-bun           hide ~/.bun; default: mount ~/.bun read-write if HOME exists
+  --no-cache         hide ~/.cache; default: mount ~/.cache read-write if HOME exists
   --writable PATH    extra host path to mount read-write
   --help             show this help
 
@@ -62,5 +64,6 @@ Examples:
   scripts/run-pi-sandboxed.sh "prompt here"
   scripts/run-pi-sandboxed.sh --no-runtime -- pi
   scripts/run-pi-sandboxed.sh --no-bun
+  scripts/run-pi-sandboxed.sh --no-cache
   scripts/run-pi-sandboxed.sh -- bash -lc 'uname -a'
 ```
