@@ -32,8 +32,8 @@ Escape is not impossible, but it protects against lots of oopsies.
 Copy it somewhere in your $PATH: `cp scripts/run-pi-sandboxed.sh ~/.local/bin/`
 
 ```
-Usage: scripts/run-pi-sandboxed.sh [--no-ssh] [--no-runtime] [--no-bun] [--no-cache] [--writable PATH ...] [PI_ARG ...]
-       scripts/run-pi-sandboxed.sh [--no-ssh] [--no-runtime] [--no-bun] [--no-cache] [--writable PATH ...] [-- COMMAND [ARG ...]]
+Usage: scripts/run-pi-sandboxed.sh [--no-ssh] [--no-runtime] [--no-bun] [--no-cache] [--no-node-nodules] [--writable PATH ...] [PI_ARG ...]
+       scripts/run-pi-sandboxed.sh [--no-ssh] [--no-runtime] [--no-bun] [--no-cache] [--no-node-nodules] [--writable PATH ...] [-- COMMAND [ARG ...]]
 
 Runs `pi` in bubblewrap by default.
 Use `-- COMMAND ...` to run something other than `pi`.
@@ -46,6 +46,7 @@ Bubblewrap setup:
 - ~/.pi mounted read-write by default
 - ~/.bun mounted read-write by default
 - ~/.cache mounted read-write by default
+- repo node_modules visible by default
 - XDG runtime dir mounted read-only by default
 
 Options:
@@ -54,6 +55,7 @@ Options:
                      default: mount XDG_RUNTIME_DIR read-only if present
   --no-bun           hide ~/.bun; default: mount ~/.bun read-write if HOME exists
   --no-cache         hide ~/.cache; default: mount ~/.cache read-write if HOME exists
+  --no-node-nodules  hide repo node_modules with an empty tmpfs
   --writable PATH    extra host path to mount read-write
   --help             show this help
 
@@ -65,5 +67,6 @@ Examples:
   scripts/run-pi-sandboxed.sh --no-runtime -- pi
   scripts/run-pi-sandboxed.sh --no-bun
   scripts/run-pi-sandboxed.sh --no-cache
+  scripts/run-pi-sandboxed.sh --no-node-nodules
   scripts/run-pi-sandboxed.sh -- bash -lc 'uname -a'
 ```

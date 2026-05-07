@@ -10,8 +10,8 @@ fi
 
 print_help() {
   cat >&2 <<EOF
-Usage: $prog_name [--no-ssh] [--no-runtime] [--no-bun] [--no-cache] [--writable PATH ...] [PI_ARG ...]
-       $prog_name [--no-ssh] [--no-runtime] [--no-bun] [--no-cache] [--writable PATH ...] [-- COMMAND [ARG ...]]
+Usage: $prog_name [--no-ssh] [--no-runtime] [--no-bun] [--no-cache] [--no-node-nodules] [--writable PATH ...] [PI_ARG ...]
+       $prog_name [--no-ssh] [--no-runtime] [--no-bun] [--no-cache] [--no-node-nodules] [--writable PATH ...] [-- COMMAND [ARG ...]]
 
 Runs 'pi' in bubblewrap by default.
 Use '-- COMMAND ...' to run something other than 'pi'.
@@ -24,6 +24,7 @@ Bubblewrap setup:
 - ~/.pi mounted read-write by default
 - ~/.bun mounted read-write by default
 - ~/.cache mounted read-write by default
+- repo node_modules visible by default
 - XDG runtime dir mounted read-only by default
 
 Options:
@@ -32,6 +33,7 @@ Options:
                      default: mount XDG_RUNTIME_DIR read-only if present
   --no-bun           hide ~/.bun; default: mount ~/.bun read-write if HOME exists
   --no-cache         hide ~/.cache; default: mount ~/.cache read-write if HOME exists
+  --no-node-nodules  hide repo node_modules with an empty tmpfs
   --writable PATH    extra host path to mount read-write
   --help             show this help
 
@@ -43,6 +45,7 @@ Examples:
   $prog_name --no-runtime -- pi
   $prog_name --no-bun
   $prog_name --no-cache
+  $prog_name --no-node-nodules
 EOF
 }
 
@@ -50,6 +53,7 @@ hide_ssh=0
 hide_runtime_dir=0
 hide_bun=0
 hide_cache=0
+hide_node_nodules=0
 extra_writable=()
 command_mode=0
 
@@ -69,6 +73,10 @@ while [ "$#" -gt 0 ]; do
       ;;
     --no-cache)
       hide_cache=1
+      shift
+      ;;
+    --no-node-nodules)
+      hide_node_nodules=1
       shift
       ;;
     --writable)
@@ -145,6 +153,10 @@ if [ -n "$home_dir" ] && [ -d "$home_dir" ]; then
   if [ "$hide_ssh" -eq 1 ] && [ -e "$home_dir/.ssh" ]; then
     args+=(--tmpfs "$home_dir/.ssh")
   fi
+fi
+
+if [ "$hide_node_nodules" -eq 1 ] && [ -e "$repo_dir/node_modules" ]; then
+  args+=(--tmpfs "$repo_dir/node_modules")
 fi
 
 if [ -n "$xdg_runtime_dir" ] && [ -d "$xdg_runtime_dir" ]; then
