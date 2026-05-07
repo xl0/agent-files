@@ -46,7 +46,7 @@ Bubblewrap setup:
 - ~/.pi mounted read-write by default
 - ~/.bun mounted read-write by default
 - ~/.cache mounted read-write by default
-- repo node_modules mounted read-write by default if present
+- ~/node_modules mounted read-write by default if present
 - XDG runtime dir mounted read-only by default
 
 Options:
@@ -55,7 +55,7 @@ Options:
                      default: mount XDG_RUNTIME_DIR read-only if present
   --ro-bun           keep ~/.bun read-only; default: mount ~/.bun read-write if HOME exists
   --ro-cache         keep ~/.cache read-only; default: mount ~/.cache read-write if HOME exists
-  --ro-node-modules  keep repo node_modules read-only; default: mount read-write if present
+  --ro-node-modules  keep ~/node_modules read-only; default: mount read-write if present
   --writable PATH    extra host path to mount read-write
   --help             show this help
 
