@@ -32,8 +32,8 @@ Escape is not impossible, but it protects against lots of oopsies.
 Copy it somewhere in your $PATH: `cp scripts/run-pi-sandboxed.sh ~/.local/bin/`
 
 ```
-Usage: scripts/run-pi-sandboxed.sh [--no-ssh] [--no-runtime] [--no-bun] [--no-cache] [--no-node-nodules] [--writable PATH ...] [PI_ARG ...]
-       scripts/run-pi-sandboxed.sh [--no-ssh] [--no-runtime] [--no-bun] [--no-cache] [--no-node-nodules] [--writable PATH ...] [-- COMMAND [ARG ...]]
+Usage: scripts/run-pi-sandboxed.sh [--no-ssh] [--no-runtime] [--ro-bun] [--ro-cache] [--ro-node-modules] [--writable PATH ...] [PI_ARG ...]
+       scripts/run-pi-sandboxed.sh [--no-ssh] [--no-runtime] [--ro-bun] [--ro-cache] [--ro-node-modules] [--writable PATH ...] [-- COMMAND [ARG ...]]
 
 Runs `pi` in bubblewrap by default.
 Use `-- COMMAND ...` to run something other than `pi`.
@@ -46,16 +46,16 @@ Bubblewrap setup:
 - ~/.pi mounted read-write by default
 - ~/.bun mounted read-write by default
 - ~/.cache mounted read-write by default
-- repo node_modules visible by default
+- repo node_modules mounted read-write by default if present
 - XDG runtime dir mounted read-only by default
 
 Options:
   --no-ssh           hide ~/.ssh with an empty tmpfs
   --no-runtime       hide XDG_RUNTIME_DIR with an empty tmpfs
                      default: mount XDG_RUNTIME_DIR read-only if present
-  --no-bun           hide ~/.bun; default: mount ~/.bun read-write if HOME exists
-  --no-cache         hide ~/.cache; default: mount ~/.cache read-write if HOME exists
-  --no-node-nodules  hide repo node_modules with an empty tmpfs
+  --ro-bun           keep ~/.bun read-only; default: mount ~/.bun read-write if HOME exists
+  --ro-cache         keep ~/.cache read-only; default: mount ~/.cache read-write if HOME exists
+  --ro-node-modules  keep repo node_modules read-only; default: mount read-write if present
   --writable PATH    extra host path to mount read-write
   --help             show this help
 
@@ -65,8 +65,8 @@ Examples:
   scripts/run-pi-sandboxed.sh --model gpt-5
   scripts/run-pi-sandboxed.sh "prompt here"
   scripts/run-pi-sandboxed.sh --no-runtime -- pi
-  scripts/run-pi-sandboxed.sh --no-bun
-  scripts/run-pi-sandboxed.sh --no-cache
-  scripts/run-pi-sandboxed.sh --no-node-nodules
+  scripts/run-pi-sandboxed.sh --ro-bun
+  scripts/run-pi-sandboxed.sh --ro-cache
+  scripts/run-pi-sandboxed.sh --ro-node-modules
   scripts/run-pi-sandboxed.sh -- bash -lc 'uname -a'
 ```
