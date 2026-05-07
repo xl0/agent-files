@@ -7,9 +7,9 @@ I don't use global skills/AGENTS.md/etc, everything is per-project.
 
 ## AGENTS.md
 
-Combine the `AGENTS*.md` files as you need them. As few or as many as you want.
+Combine the `agents/AGENTS*.md` files as you need them. As few or as many as you want.
 
-`cat AGENTS.md AGENTS-svelte.md AGENTS-lovely-docs.md > /path/to/new/project/AGENTS.md`
+`cd agents && cat AGENTS.md AGENTS-svelte.md AGENTS-lovely-docs.md > /path/to/new/project/AGENTS.md`
 
 Then edit the new `AGENTS.md`, and optionally feed the edits back here if they are good.
 
