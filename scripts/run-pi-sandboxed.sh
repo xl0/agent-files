@@ -10,8 +10,8 @@ fi
 
 print_help() {
   cat >&2 <<EOF
-Usage: $prog_name [--no-ssh] [--no-runtime] [--ro-bun] [--ro-cache] [--ro-node-modules] [--writable PATH ...] [PI_ARG ...]
-       $prog_name [--no-ssh] [--no-runtime] [--ro-bun] [--ro-cache] [--ro-node-modules] [--writable PATH ...] [-- COMMAND [ARG ...]]
+Usage: $prog_name [--no-ssh] [--no-runtime] [--ro-runtime] [--ro-bun] [--ro-cache] [--ro-node-modules] [--writable PATH ...] [PI_ARG ...]
+       $prog_name [--no-ssh] [--no-runtime] [--ro-runtime] [--ro-bun] [--ro-cache] [--ro-node-modules] [--writable PATH ...] [-- COMMAND [ARG ...]]
 
 Runs 'pi' in bubblewrap by default.
 Use '-- COMMAND ...' to run something other than 'pi'.
@@ -25,12 +25,13 @@ Bubblewrap setup:
 - ~/.bun mounted read-write by default
 - ~/.cache mounted read-write by default
 - ~/node_modules mounted read-write by default if present
-- XDG runtime dir mounted read-only by default
+- XDG runtime dir mounted read-write by default
 
 Options:
   --no-ssh           hide ~/.ssh with an empty tmpfs
   --no-runtime       hide XDG_RUNTIME_DIR (/run/user/<uid>) with an empty tmpfs
-                     default: mount XDG_RUNTIME_DIR read-only if present
+                     default: mount XDG_RUNTIME_DIR read-write if present
+  --ro-runtime       keep XDG_RUNTIME_DIR read-only
   --ro-bun           keep ~/.bun read-only; default: mount ~/.bun read-write if HOME exists
   --ro-cache         keep ~/.cache read-only; default: mount ~/.cache read-write if HOME exists
   --ro-node-modules  keep ~/node_modules read-only; default: mount read-write if present
@@ -43,6 +44,7 @@ Examples:
   $prog_name --model gpt-5
   $prog_name "prompt here"
   $prog_name --no-runtime -- pi
+  $prog_name --ro-runtime
   $prog_name --ro-bun
   $prog_name --ro-cache
   $prog_name --ro-node-modules
@@ -51,6 +53,7 @@ EOF
 
 hide_ssh=0
 hide_runtime_dir=0
+ro_runtime=0
 ro_bun=0
 ro_cache=0
 ro_node_modules=0
@@ -61,6 +64,7 @@ while [ "$#" -gt 0 ]; do
   case "$1" in
     --no-ssh) hide_ssh=1 ;;
     --no-runtime) hide_runtime_dir=1 ;;
+    --ro-runtime) ro_runtime=1 ;;
     --ro-bun) ro_bun=1 ;;
     --ro-cache) ro_cache=1 ;;
     --ro-node-modules) ro_node_modules=1 ;;
@@ -128,6 +132,8 @@ fi
 
 if [ "$hide_runtime_dir" -eq 1 ]; then
   args+=(--tmpfs "$xdg_runtime_dir")
+elif [ "$ro_runtime" -eq 0 ]; then
+  extra_writable+=("$xdg_runtime_dir")
 fi
 
 for path in "${extra_writable[@]}"; do
