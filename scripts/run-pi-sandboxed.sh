@@ -10,8 +10,8 @@ fi
 
 print_help() {
   cat >&2 <<EOF
-Usage: $prog_name [--no-ssh] [--no-runtime] [--ro-runtime] [--ro-bun] [--ro-cache] [--ro-node-modules] [--writable PATH ...] [PI_ARG ...]
-       $prog_name [--no-ssh] [--no-runtime] [--ro-runtime] [--ro-bun] [--ro-cache] [--ro-node-modules] [--writable PATH ...] [-- COMMAND [ARG ...]]
+Usage: $prog_name [--no-ssh] [--no-runtime] [--ro-runtime] [--ro-bun] [--ro-cache] [--ro-node-modules] [--no-cuda] [--writable PATH ...] [PI_ARG ...]
+       $prog_name [--no-ssh] [--no-runtime] [--ro-runtime] [--ro-bun] [--ro-cache] [--ro-node-modules] [--no-cuda] [--writable PATH ...] [-- COMMAND [ARG ...]]
 
 Runs 'pi' in bubblewrap by default.
 Use '-- COMMAND ...' to run something other than 'pi'.
@@ -26,6 +26,7 @@ Bubblewrap setup:
 - ~/.cache mounted read-write by default
 - ~/node_modules mounted read-write by default if present
 - XDG runtime dir mounted read-write by default
+- NVIDIA device nodes mounted by default if present, so CUDA/nvidia-smi can work
 
 Options:
   --no-ssh           hide ~/.ssh with an empty tmpfs
@@ -35,6 +36,7 @@ Options:
   --ro-bun           keep ~/.bun read-only; default: mount ~/.bun read-write if HOME exists
   --ro-cache         keep ~/.cache read-only; default: mount ~/.cache read-write if HOME exists
   --ro-node-modules  keep ~/node_modules read-only; default: mount read-write if present
+  --no-cuda          do not mount NVIDIA device nodes into the sandbox
   --writable PATH    extra host path to mount read-write
   --help             show this help
 
@@ -57,6 +59,7 @@ ro_runtime=0
 ro_bun=0
 ro_cache=0
 ro_node_modules=0
+mount_cuda=1
 extra_writable=()
 command_mode=0
 
@@ -68,6 +71,7 @@ while [ "$#" -gt 0 ]; do
     --ro-bun) ro_bun=1 ;;
     --ro-cache) ro_cache=1 ;;
     --ro-node-modules) ro_node_modules=1 ;;
+    --no-cuda) mount_cuda=0 ;;
     --writable)
       [ "$#" -ge 2 ] || { echo "--writable requires a path" >&2; exit 1; }
       extra_writable+=("$2")
@@ -134,6 +138,25 @@ if [ "$hide_runtime_dir" -eq 1 ]; then
   args+=(--tmpfs "$xdg_runtime_dir")
 elif [ "$ro_runtime" -eq 0 ]; then
   extra_writable+=("$xdg_runtime_dir")
+fi
+
+if [ "$mount_cuda" -eq 1 ]; then
+  if command -v nvidia-modprobe >/dev/null 2>&1; then
+    nvidia-modprobe -u -c=0 >/dev/null 2>&1 || true
+  fi
+
+  shopt -s nullglob
+  nvidia_devices=(/dev/nvidia* /dev/nvidia-caps/nvidia-cap*)
+  shopt -u nullglob
+
+  if [ -d /dev/nvidia-caps ]; then
+    args+=(--dir /dev/nvidia-caps)
+  fi
+
+  for device in "${nvidia_devices[@]}"; do
+    [ -c "$device" ] || continue
+    args+=(--dev-bind "$device" "$device")
+  done
 fi
 
 for path in "${extra_writable[@]}"; do
