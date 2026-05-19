@@ -7,9 +7,9 @@ I don't use global skills/AGENTS.md/etc, everything is per-project.
 
 ## AGENTS.md
 
-Combine the `agents/AGENTS*.md` files as you need them. As few or as many as you want.
+Combine the `agents.md/AGENTS*.md` files as you need them. As few or as many as you want.
 
-`cd agents && cat AGENTS.md AGENTS-svelte.md AGENTS-lovely-docs.md > /path/to/new/project/AGENTS.md`
+`cd agents.md && cat AGENTS.md AGENTS-svelte.md AGENTS-lovely-docs.md > /path/to/new/project/AGENTS.md`
 
 Then edit the new `AGENTS.md`, and optionally feed the edits back here if they are good.
 
@@ -17,10 +17,10 @@ Then edit the new `AGENTS.md`, and optionally feed the edits back here if they a
 
 ## Packages to install:
 
-# Show rendered system prompt & tool schemas (good for developing modules with new tools)
-```bash
-pi install -l https://github.com/xl0/pi-agent-show-sysprompt
-```
+- `pi install -l https://github.com/xl0/pi-agent-show-sysprompt` — show rendered prompt/tool schemas.
+- `pi install -l npm:@xl0/pi-ide-integration` — IDE selection/@mention integration.
+- `pi install -l npm:@xl0/pi-web-tools` — `web_search`/`web_fetch`.
+- `pi install -l git:git@github.com:xl0/pi-agent-notebook-extension` — `.ipynb` read/edit tools + VSCode/Jupyter execution.
 
 ## Sandbox with bwrap (Linux only)
 
