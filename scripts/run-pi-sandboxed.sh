@@ -19,7 +19,8 @@ Use '-- COMMAND ...' to run something other than 'pi'.
 Bubblewrap setup:
 - host / mounted read-only
 - current repo mounted read-write
-- private /tmp
+- repo .pi/sandbox/tmp mounted at /tmp
+- repo .pi/sandbox/var-tmp mounted at /var/tmp
 - network allowed by default
 - ~/.pi mounted read-write by default
 - ~/.bun mounted read-write by default
@@ -101,6 +102,11 @@ xdg_runtime_dir=${XDG_RUNTIME_DIR:?XDG_RUNTIME_DIR is not set}
 [ -d "$home_dir" ]
 [ -d "$xdg_runtime_dir" ]
 
+sandbox_tmp_dir="$repo_dir/.pi/sandbox/tmp"
+sandbox_var_tmp_dir="$repo_dir/.pi/sandbox/var-tmp"
+mkdir -p "$sandbox_tmp_dir" "$sandbox_var_tmp_dir"
+chmod 1777 "$sandbox_tmp_dir" "$sandbox_var_tmp_dir"
+
 args=(
   --die-with-parent
   --new-session
@@ -108,8 +114,8 @@ args=(
   --bind "$repo_dir" "$repo_dir"
   --dev /dev
   --proc /proc
-  --tmpfs /tmp
-  --tmpfs /var/tmp
+  --bind "$sandbox_tmp_dir" /tmp
+  --bind "$sandbox_var_tmp_dir" /var/tmp
   --chdir "$repo_dir"
 )
 
