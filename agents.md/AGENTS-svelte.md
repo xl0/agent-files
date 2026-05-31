@@ -1,4 +1,5 @@
 ## TypeScript / Node / Svelte
+
 - Always use bun/bunx, not npm
 - You may install packages, double-check with the user if in doubt.
 - If  project is using shadcn, prefer installing shadcn components over hand-rolled replacements.

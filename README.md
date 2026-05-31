@@ -3,7 +3,7 @@
 First, this repo is for my own reference. You are welcome to ride along.
 
 For each new project, I copy stuff from here to the project.
-I don't use global skills/AGENTS.md/etc, everything is per-project.
+I avoid global skills/AGENTS.md/etc, everything is per-project.
 
 ## AGENTS.md
 
@@ -17,9 +17,9 @@ Then edit the new `AGENTS.md`, and optionally feed the edits back here if they a
 
 ## Packages to install:
 
-- `pi install -l https://github.com/xl0/pi-agent-show-sysprompt` — show rendered prompt/tool schemas.
+- `pi install -l npm:@xl0/pi-lovely-dev-tools` — `/tool` and `/show-sysprompt` commands.
 - `pi install -l npm:@xl0/pi-ide-integration` — IDE selection/@mention integration.
-- `pi install -l npm:@xl0/pi-web-tools` — `web_search`/`web_fetch`.
+- `pi install -l npm:@xl0/pi-lovely-web` — `web_search`/`web_fetch`/`web_image`.
 - `pi install -l git:git@github.com:xl0/pi-agent-notebook-extension` — `.ipynb` read/edit tools + VSCode/Jupyter execution.
 
 ## Sandbox with bwrap (Linux only)

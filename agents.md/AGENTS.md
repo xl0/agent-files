@@ -3,9 +3,9 @@
 Maintain 2 important files in sync with the codebase:
 
 - `CODE.md`: An in-depth summary of the current state of the codebase.
-- `TODO.md`: Contains both high-level birds eye plan, as well as a lower-level todo list. Use [x] boxes to mark items.
+- `PLAN.md`: Contains both high-level birds eye plan, as well as a lower-level todo list. Use [x] boxes to mark items.
 
-IMPORTANT: At the start of each conversation, always fully read `CODE.md`. You may read `TODO.md` when relevant to the task.
+IMPORTANT: At the start of each conversation, always fully read `CODE.md`. You may read `PLAN.md` when relevant to the task.
 Update the files as you go, keep the updates concise. Not a changelog - content reflects the current state, not history.
 
 # Guidelines
@@ -44,5 +44,6 @@ Update the files as you go, keep the updates concise. Not a changelog - content 
 
 ### Git
 
+- Only commit when directly instructed. 
 - When you commit, it's possible that the worktree contains unrelated changes and untracked files. Don't blindly add files - only commit what's necessary.
 - **NEVER** use destructive commands like `git reset --hard` or `git checkout --` unless specifically requested or approved by the user.

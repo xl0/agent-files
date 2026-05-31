@@ -33,27 +33,27 @@ For example:
 
 | Path | Purpose |
 |---|---|
-| [`src/krea_pretrain/`](src/krea_pretrain/) | Core library: DiT, autoencoders, text encoders, LoRA, sampling/solvers, parallelism/TP, FP8 quantization |
-| [`rl_utils/`](rl_utils/) | Shared RL infra: Pydantic configs, GDPO/GARDO, reward registry, con-solver variant |
-| [`configs/`](configs/) | YAML configs grouped by stage: [`debug/`](configs/debug/), [`scaling/adamw/`](configs/scaling/adamw/), sft/, arch/, dpo/, infer/, plus `dnft_*.
+| [`src/core/`](src/core/) | Core library: primary models/services, shared abstractions, execution pipeline, performance-critical utilities |
+| [`src/training/`](src/training/) | Training/evaluation infrastructure: configs, distributed setup, metrics, checkpointing, reward or scoring utilities |
+| [`configs/`](configs/) | YAML/TOML configs grouped by environment or stage: [`debug/`](configs/debug/), [`prod/`](configs/prod/), experiment presets, inference/evaluation settings |
 ...
 
-## Core Library [`src/krea_pretrain/`](src/krea_pretrain/)
+## Core Library [`src/core/`](src/core/)
 
 | Module | Purpose |
 |---|---|
-| [`mmdit.py`](src/krea_pretrain/mmdit.py) | **The DiT model** — `SingleStreamDiT` (single-stream MMDiT architecture). Configurable via `SingleMMDiTConfig`. Contains FSDP2 and TP parallelisation functions |
-| [`modules.py`](src/krea_pretrain/modules.py) | Building blocks: Attention, SwiGLU, RMSNorm/LayerNorm, SharedModulation, PositionalEncoding, LastLayer, Registers, TextFusionTransformer |
-| [`math.py`](src/krea_pretrain/math.py) | RoPE implementation and attention dispatch (Flash/Varlen, FlexAttention, SDPA) |
-| [`pipeline.py`](src/krea_pretrain/pipeline.py) | `Sampler` class — full flow-matching inference pipeline: encode → ODE solve → decode |
+| [`model.py`](src/core/model.py) | Main model/service implementation and its configuration objects; note any distributed/parallelization hooks here |
+| [`modules.py`](src/core/modules.py) | Reusable building blocks and domain abstractions used by the main implementation |
+| [`math.py`](src/core/math.py) | Numeric algorithms, kernels, backend dispatch, or other low-level helpers |
+| [`pipeline.py`](src/core/pipeline.py) | End-to-end runtime pipeline: input preparation → execution/solve/process → output decoding/formatting |
 ...
 
-## RL Infrastructure [`rl_utils/`](rl_utils/)
+## Training / Evaluation Infrastructure [`src/training/`](src/training/)
 
 | File | Purpose |
 |---|---|
-| [`config.py`](rl_utils/config.py) | Shared Pydantic configs: `DataConfig`, `FSDPConfig` (dp, shard, gp), `FlowMatchConfig`, `SampleConfig`, `EMAConfig`, `DITConfig`, `DNFTConfig`, `SRPOConfig`, `CFGConfig`, `LoRAConfig`, `WandbConfig` |
-| [`gdpo.py`](rl_utils/gdpo.py) | GDPO advantage computation: `gdpo_advantages()`, `RewardEMAScaler` (per-reward EMA global std), `select_oversample_indices()` |
+| [`config.py`](src/training/config.py) | Shared typed configs for data, distributed execution, optimization, sampling/evaluation, logging, and adapters/extensions |
+| [`metrics.py`](src/training/metrics.py) | Metric/reward computation, normalization/scaling, selection/filtering helpers |
 ...
 
 ```
