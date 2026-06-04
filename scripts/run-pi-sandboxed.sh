@@ -109,7 +109,6 @@ chmod 1777 "$sandbox_tmp_dir" "$sandbox_var_tmp_dir"
 
 args=(
   --die-with-parent
-  --new-session
   --ro-bind / /
   --bind "$repo_dir" "$repo_dir"
   --dev /dev
