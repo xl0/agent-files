@@ -5,11 +5,15 @@ description: Grilling session that challenges your plan against the existing dom
 
 <what-to-do>
 
-Interview me relentlessly about every aspect of this plan until we reach a shared understanding. Walk down each branch of the design tree, resolving dependencies between decisions one-by-one. For each question, provide your recommended answer.
+Interview me relentlessly about every aspect of this plan until we reach a shared understanding. Start by outlining the question tree in `PLAN.md`.
+Walk down the design tree, resolving dependencies between decisions one-by-one.
+Some questions might require a quick prototype, a test script and hands-on testing by the user.
+For each question, provide your recommended answer. Use question tool is present and appropriate.
 
 Ask the questions one at a time, waiting for feedback on each question before continuing.
+But when you are quire certain the your recommended answer is correct, you can answer it yourself and proceed to the next one.
 
-If a question can be answered by exploring the codebase, explore the codebase instead.
+As decisions crystallise, update `PLAN.md` inline. Update `CODE.md` only when the actual codebase state changes. Keep docs concise and current-state oriented, not changelogs. Compact `PLAN.md` as work lands: mark completed items, remove obsolete detail, and keep only the next useful plan.
 
 </what-to-do>
 
@@ -21,32 +25,16 @@ During codebase exploration, also look for existing documentation:
 
 ### File structure
 
-Most repos have a single context:
-
 ```
 /
+├── PLAN.md
+├── CODE.md
 ├── CONTEXT.md
 ├── docs/
 │   └── adr/
 │       ├── 0001-event-sourced-orders.md
 │       └── 0002-postgres-for-write-model.md
 └── src/
-```
-
-If a `CONTEXT-MAP.md` exists at the root, the repo has multiple contexts. The map points to where each one lives:
-
-```
-/
-├── CONTEXT-MAP.md
-├── docs/
-│   └── adr/                          ← system-wide decisions
-├── src/
-│   ├── ordering/
-│   │   ├── CONTEXT.md
-│   │   └── docs/adr/                 ← context-specific decisions
-│   └── billing/
-│       ├── CONTEXT.md
-│       └── docs/adr/
 ```
 
 Create files lazily — only when you have something to write. If no `CONTEXT.md` exists, create one when the first term is resolved. If no `docs/adr/` exists, create it when the first ADR is needed.
