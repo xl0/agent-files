@@ -102,9 +102,13 @@ xdg_runtime_dir=${XDG_RUNTIME_DIR:?XDG_RUNTIME_DIR is not set}
 [ -d "$home_dir" ]
 [ -d "$xdg_runtime_dir" ]
 
-sandbox_tmp_dir="$repo_dir/.pi/sandbox/tmp"
-sandbox_var_tmp_dir="$repo_dir/.pi/sandbox/var-tmp"
+sandbox_dir="$repo_dir/.pi/sandbox"
+sandbox_tmp_dir="$sandbox_dir/tmp"
+sandbox_var_tmp_dir="$sandbox_dir/var-tmp"
 mkdir -p "$sandbox_tmp_dir" "$sandbox_var_tmp_dir"
+if [ ! -e "$sandbox_dir/.gitignore" ]; then
+  printf '*\n' >"$sandbox_dir/.gitignore"
+fi
 chmod 1777 "$sandbox_tmp_dir" "$sandbox_var_tmp_dir"
 
 args=(
