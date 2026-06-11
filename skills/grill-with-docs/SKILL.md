@@ -3,21 +3,20 @@ name: grill-with-docs
 description: Grilling session that challenges your plan against the existing domain model, sharpens terminology, and updates documentation (CONTEXT.md, ADRs) inline as decisions crystallise. Use when user wants to stress-test a plan against their project's language and documented decisions.
 ---
 
-<what-to-do>
-
 Interview me relentlessly about every aspect of this plan until we reach a shared understanding. Start by outlining the question tree in `PLAN.md`.
-Walk down the design tree, resolving dependencies between decisions one-by-one.
-Some questions might require a quick prototype, a test script and hands-on testing by the user.
-For each question, provide your recommended answer. Use question tool is present and appropriate.
+Walk down the design tree, resolving dependencies between decisions.
+For each question, provide your recommended answer.
+Some questions might require a quick prototype, a test script and hands-on testing by the user. Confirm with the user.
 
-Ask the questions one at a time, waiting for feedback on each question before continuing.
-But when you are quire certain the your recommended answer is correct, you can answer it yourself and proceed to the next one.
+Ask the questions, wait for feedback on each question before continuing. Clarify if the user did not provide a clear answer. Ask again if necessary.
 
-As decisions crystallise, update `PLAN.md` inline. Update `CODE.md` only when the actual codebase state changes. Keep docs concise and current-state oriented, not changelogs. Compact `PLAN.md` as work lands: mark completed items, remove obsolete detail, and keep only the next useful plan.
+Use question tool if present, the multiple questions version if more than one question. 
+When the question tool allows, query user in rounds of independent questions - multiple questions per tool call, as long as later questions don't depend on the former ones.
+If dependency between questions may exists, the dependent questions need to go into the next block.
 
-</what-to-do>
-
-<supporting-info>
+As decisions crystallise, update `PLAN.md` inline with an implementation plan if appropriate.
+Update `CODE.md` only when the actual codebase state changes. Keep docs concise and current-state oriented, not changelogs.
+Compact `PLAN.md` as work lands: mark completed items, remove obsolete detail, and keep only the next useful plan.
 
 ## Domain awareness
 
@@ -72,5 +71,3 @@ Only offer to create an ADR when all three are true:
 3. **The result of a real trade-off** — there were genuine alternatives and you picked one for specific reasons
 
 If any of the three is missing, skip the ADR. Use the format in [ADR-FORMAT.md](./ADR-FORMAT.md).
-
-</supporting-info>
