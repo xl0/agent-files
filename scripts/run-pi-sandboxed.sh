@@ -25,6 +25,7 @@ Bubblewrap setup:
 - ~/.pi mounted read-write by default
 - ~/.bun mounted read-write by default
 - ~/.cache mounted read-write by default
+- ~/.config/matplotlib hidden behind an empty writable tmpfs
 - ~/node_modules mounted read-write by default if present
 - XDG runtime dir mounted read-write by default
 - NVIDIA device nodes mounted by default if present, so CUDA/nvidia-smi can work
@@ -134,6 +135,9 @@ if [ "$ro_cache" -eq 0 ]; then
   mkdir -p "$home_dir/.cache"
   extra_writable+=("$home_dir/.cache")
 fi
+
+mkdir -p "$home_dir/.config"
+args+=(--tmpfs "$home_dir/.config/matplotlib")
 
 if [ "$hide_ssh" -eq 1 ]; then
   args+=(--tmpfs "$home_dir/.ssh")
