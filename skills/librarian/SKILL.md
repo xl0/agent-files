@@ -23,15 +23,15 @@ Example:
 ## Command
 
 ```bash
-bash checkout.sh <repo> --path-only
+python3 checkout.py <repo>
 ```
 
 Examples:
 
 ```bash
-bash checkout.sh mitsuhiko/minijinja --path-only
-bash checkout.sh github.com/mitsuhiko/minijinja --path-only
-bash checkout.sh https://github.com/mitsuhiko/minijinja --path-only
+python3 checkout.py mitsuhiko/minijinja
+python3 checkout.py github.com/mitsuhiko/minijinja
+python3 checkout.py https://github.com/mitsuhiko/minijinja
 ```
 
 The script will:
@@ -47,14 +47,14 @@ The script will:
 - Force immediate refresh with:
 
 ```bash
-bash checkout.sh <repo> --force-update --path-only
+python3 checkout.py <repo> --force-update
 ```
 
 ## Recommended workflow
 
-1. Resolve repository path via `checkout.sh --path-only`.
+1. Resolve repository path via `python3 checkout.py <repo>`.
 2. Use that path for searching, reading, and analysis.
-3. On later references to the same repo, call `checkout.sh` again; it will find and update the cached checkout.
+3. On later references to the same repo, call `checkout.py` again; it will find and update the cached checkout.
 
 ## If edits are needed
 
