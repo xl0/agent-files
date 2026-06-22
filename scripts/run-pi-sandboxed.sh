@@ -10,8 +10,8 @@ fi
 
 print_help() {
   cat >&2 <<EOF
-Usage: $prog_name [--no-ssh] [--no-runtime] [--ro-runtime] [--ro-bun] [--ro-cache] [--ro-node-modules] [--no-cuda] [--writable PATH ...] [PI_ARG ...]
-       $prog_name [--no-ssh] [--no-runtime] [--ro-runtime] [--ro-bun] [--ro-cache] [--ro-node-modules] [--no-cuda] [--writable PATH ...] [-- COMMAND [ARG ...]]
+Usage: $prog_name [--no-ssh] [--no-runtime] [--ro-runtime] [--ro-bun] [--ro-cache] [--ro-vscode] [--ro-node-modules] [--no-cuda] [--writable PATH ...] [PI_ARG ...]
+       $prog_name [--no-ssh] [--no-runtime] [--ro-runtime] [--ro-bun] [--ro-cache] [--ro-vscode] [--ro-node-modules] [--no-cuda] [--writable PATH ...] [-- COMMAND [ARG ...]]
 
 Runs 'pi' in bubblewrap by default.
 Use '-- COMMAND ...' to run something other than 'pi'.
@@ -25,6 +25,7 @@ Bubblewrap setup:
 - ~/.pi mounted read-write by default
 - ~/.bun mounted read-write by default
 - ~/.cache mounted read-write by default
+- VS Code user-data dirs mounted read-write by default if present
 - ~/.config/matplotlib hidden behind an empty writable tmpfs
 - ~/node_modules mounted read-write by default if present
 - XDG runtime dir mounted read-write by default
@@ -37,6 +38,7 @@ Options:
   --ro-runtime       keep XDG_RUNTIME_DIR read-only
   --ro-bun           keep ~/.bun read-only; default: mount ~/.bun read-write if HOME exists
   --ro-cache         keep ~/.cache read-only; default: mount ~/.cache read-write if HOME exists
+  --ro-vscode        keep VS Code user-data dirs read-only; default: mount existing dirs read-write
   --ro-node-modules  keep ~/node_modules read-only; default: mount read-write if present
   --no-cuda          do not mount NVIDIA device nodes into the sandbox
   --writable PATH    extra host path to mount read-write
@@ -51,6 +53,7 @@ Examples:
   $prog_name --ro-runtime
   $prog_name --ro-bun
   $prog_name --ro-cache
+  $prog_name --ro-vscode
   $prog_name --ro-node-modules
 EOF
 }
@@ -60,6 +63,7 @@ hide_runtime_dir=0
 ro_runtime=0
 ro_bun=0
 ro_cache=0
+ro_vscode=0
 ro_node_modules=0
 mount_cuda=1
 extra_writable=()
@@ -72,6 +76,7 @@ while [ "$#" -gt 0 ]; do
     --ro-runtime) ro_runtime=1 ;;
     --ro-bun) ro_bun=1 ;;
     --ro-cache) ro_cache=1 ;;
+    --ro-vscode) ro_vscode=1 ;;
     --ro-node-modules) ro_node_modules=1 ;;
     --no-cuda) mount_cuda=0 ;;
     --writable)
@@ -134,6 +139,26 @@ fi
 if [ "$ro_cache" -eq 0 ]; then
   mkdir -p "$home_dir/.cache"
   extra_writable+=("$home_dir/.cache")
+fi
+
+if [ "$ro_vscode" -eq 0 ]; then
+  command -v code >/dev/null 2>&1 && mkdir -p "$home_dir/.config/Code"
+  command -v code-insiders >/dev/null 2>&1 && mkdir -p "$home_dir/.config/Code - Insiders"
+  command -v codium >/dev/null 2>&1 && mkdir -p "$home_dir/.config/VSCodium"
+
+  for vscode_dir in \
+    "$home_dir/.config/Code" \
+    "$home_dir/.config/Code - Insiders" \
+    "$home_dir/.config/VSCodium" \
+    "$home_dir/.vscode" \
+    "$home_dir/.vscode-insiders" \
+    "$home_dir/.vscode-oss" \
+    "$home_dir/.vscode-oss-dev" \
+    "$home_dir/.vscode-shared" \
+    "$home_dir/.vscode-oss-shared"
+  do
+    [ -e "$vscode_dir" ] && extra_writable+=("$vscode_dir")
+  done
 fi
 
 mkdir -p "$home_dir/.config"
