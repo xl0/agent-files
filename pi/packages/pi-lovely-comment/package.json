@@ -1,13 +1,33 @@
 {
 	"name": "@xl0/pi-lovely-comment",
 	"version": "0.1.0",
-	"description": "Pi extension that opens the last assistant message in your editor and syncs edits back into the prompt.",
+	"description": "Open the last assistant message in your editor and sync edits back into the prompt",
 	"license": "MIT",
 	"type": "module",
-	"packageManager": "bun@1.3.13",
+	"publisher": "xl0",
+	"author": {
+		"name": "Alexey Zaytsev",
+		"url": "https://github.com/xl0",
+		"email": "alexey.zaytsev@gmail.com"
+	},
+	"homepage": "https://github.com/xl0/agent-files/tree/master/pi/packages/pi-lovely-comment#readme",
+	"bugs": {
+		"url": "https://github.com/xl0/agent-files/issues"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/xl0/agent-files.git",
+		"directory": "pi/packages/pi-lovely-comment"
+	},
 	"keywords": [
 		"pi-package",
-		"pi-extension"
+		"comment",
+		"editor",
+		"pi",
+		"vscode",
+		"zed",
+		"cursor",
+		"windsurf"
 	],
 	"files": [
 		"extensions",
