@@ -46,3 +46,18 @@ Save the last assistant message and open it in the editor.
 The default editor is `$EDITOR`, but you can set a bunch of popular editors in settings, or a custom command.
 
 Editor settings are stored in `~/.pi/agent/xl0-pi-lovely-comment.json`.
+
+## Related projects
+
+|  |  |
+| --- | --- |
+| [Pi Lovely Web](https://github.com/xl0/pi-lovely-web) | `web_search`, `web_fetch`, `web_image` via Firecrawl, Exa, Tavily, Brave |
+| [Pi Lovely Dev Tools](https://github.com/xl0/pi-lovely-dev-tools) | `/tool`, `/show-sysprompt`, `/show-context`, `/llm-stats` |
+| [Pi Lovely Codex](https://github.com/xl0/pi-lovely-codex) | GPT fast mode and Codex-style `apply_patch` |
+| [Pi Lovely IDE](https://github.com/xl0/pi-lovely-ide) | IDE integration |
+| [Pi Lovely Config](https://github.com/xl0/pi-lovely-config) | scoped config helpers for Pi extensions |
+
+---
+
+Like this work? [Hire me](https://alexey.work/cv?ref=pi-lovely-comment)
+
