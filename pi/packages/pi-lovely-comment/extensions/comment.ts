@@ -1,41 +1,84 @@
 import { spawn } from "node:child_process"
-import { existsSync, type FSWatcher, mkdirSync, readFileSync, rmSync, watch, writeFileSync } from "node:fs"
+import { type FSWatcher, readFileSync, rmSync, watch } from "node:fs"
 import { mkdir, writeFile } from "node:fs/promises"
 import { basename, dirname, isAbsolute, join } from "node:path"
+import { CONFIG_DIR_NAME, type ExtensionAPI, type ExtensionCommandContext, type ExtensionContext } from "@earendil-works/pi-coding-agent"
+import { matchesKey } from "@earendil-works/pi-tui"
 import {
-	CONFIG_DIR_NAME,
-	type ExtensionAPI,
-	type ExtensionCommandContext,
-	ExtensionInputComponent,
-	getAgentDir,
-	getSettingsListTheme
-} from "@earendil-works/pi-coding-agent"
-import { Container, matchesKey, type SettingItem, SettingsList, Text } from "@earendil-works/pi-tui"
+	type ConfigFromFields,
+	defineScopedConfigSpec,
+	type ResolvedConfig,
+	ScopedConfigEditor,
+	type ScopedConfigField,
+	type ScopedConfigPatch,
+	ScopedConfigState
+} from "@xl0/pi-lovely-config"
 
 const STATUS_KEY = "comment"
-const CONFIG_FILE_NAME = "xl0-pi-comment.json"
 const FREEFORM_PRESET_ID = "freeform"
+const ENV_EDITOR_PRESET_ID = "$EDITOR"
+const CONFIG_FILE_NAME = "xl0-pi-lovely-comment.json"
+const EDITOR_PRESET_IDS = [ENV_EDITOR_PRESET_ID, "code", "cursor", "zed", "windsurf", FREEFORM_PRESET_ID] as const
 
-type CommentConfig = {
-	editor?: {
-		preset?: string
-		commandLine?: string
-	}
-}
+type EditorPresetId = (typeof EDITOR_PRESET_IDS)[number]
 
 type EditorPreset = {
-	id: string
+	id: EditorPresetId
 	label: string
 	commandLine?: string
 }
 
 const EDITOR_PRESETS: EditorPreset[] = [
+	{ id: ENV_EDITOR_PRESET_ID, label: "$EDITOR" },
 	{ id: "code", label: "VS Code", commandLine: "code {file}" },
 	{ id: "cursor", label: "Cursor", commandLine: "cursor {file}" },
 	{ id: "zed", label: "Zed", commandLine: "zed {file}" },
 	{ id: "windsurf", label: "Windsurf", commandLine: "windsurf {file}" },
 	{ id: FREEFORM_PRESET_ID, label: "Freeform" }
 ]
+
+const commentConfigFields = [
+	{
+		key: "editor",
+		label: "Editor",
+		description: "GUI editor used for /comment drafts and saved assistant messages.",
+		kind: "enum",
+		values: EDITOR_PRESET_IDS,
+		default: ENV_EDITOR_PRESET_ID,
+		valueDescriptions: Object.fromEntries(
+			EDITOR_PRESETS.map(preset => [
+				preset.id,
+				preset.id === ENV_EDITOR_PRESET_ID
+					? "Command from the EDITOR environment variable."
+					: preset.commandLine
+						? `Command: ${preset.commandLine}`
+						: "Use the Freeform command."
+			])
+		)
+	},
+	{
+		key: "freeformCommand",
+		label: "Freeform command",
+		description: "Shell command for the Freeform editor preset. Use {file}, or the file path is appended.",
+		kind: "string",
+		default: "",
+		depth: 1,
+		visibleWhen: ({ get }) => get("editor") === FREEFORM_PRESET_ID
+	}
+] as const satisfies readonly ScopedConfigField[]
+
+type CommentConfig = ConfigFromFields<typeof commentConfigFields>
+type ScopedCommentConfig = ScopedConfigPatch<CommentConfig>
+
+const commentConfigSpec = defineCommentConfigSpec()
+
+function defineCommentConfigSpec() {
+	return defineScopedConfigSpec({
+		fileName: CONFIG_FILE_NAME,
+		scope: "user",
+		fields: commentConfigFields
+	})
+}
 
 type ActiveComment = {
 	file: string
@@ -55,60 +98,19 @@ type ParsedCommentArgs =
 
 let active: ActiveComment | undefined
 
-function configPath(): string {
-	return join(getAgentDir(), CONFIG_FILE_NAME)
-}
-
-function readConfigFile(): CommentConfig {
-	const path = configPath()
-	if (!existsSync(path)) return {}
-
-	const raw = readFileSync(path, "utf8")
-	try {
-		return JSON.parse(raw) as CommentConfig
-	} catch (error) {
-		throw new Error(`Could not parse /comment config at ${path}: ${(error as Error).message}`)
-	}
-}
-
-function writeConfigFile(config: CommentConfig): void {
-	const path = configPath()
-	mkdirSync(dirname(path), { recursive: true })
-	writeFileSync(path, `${JSON.stringify(config, null, 2)}\n`, "utf8")
-}
-
 function presetById(id: string | undefined): EditorPreset | undefined {
 	return EDITOR_PRESETS.find(preset => preset.id === id)
 }
 
-function presetLabel(id: string | undefined): string {
-	return presetById(id)?.label ?? "(not configured)"
-}
-
-function presetIdFromLabel(label: string): string | undefined {
-	return EDITOR_PRESETS.find(preset => preset.label === label)?.id
-}
-
-function editorCommandLine(config: CommentConfig): string | undefined {
-	const preset = presetById(config.editor?.preset)
+function editorCommandLine(config: ResolvedConfig<CommentConfig>): string | undefined {
+	const editor = commentConfigSpec.get(config, "editor")
+	if (editor === ENV_EDITOR_PRESET_ID) return (process.env as { EDITOR?: string }).EDITOR?.trim() || undefined
+	const preset = presetById(editor)
 	if (!preset) return undefined
 	if (preset.id === FREEFORM_PRESET_ID) {
-		return config.editor?.commandLine?.trim() || undefined
+		return commentConfigSpec.get(config, "freeformCommand").trim() || undefined
 	}
 	return preset.commandLine
-}
-
-function presetCommandLine(preset: EditorPreset, config: CommentConfig): string {
-	if (preset.id === FREEFORM_PRESET_ID) {
-		return config.editor?.commandLine?.trim() || "(not set)"
-	}
-	return preset.commandLine ?? "(not set)"
-}
-
-function editorSettingDescription(config: CommentConfig): string {
-	const preset = presetById(config.editor?.preset)
-	if (!preset) return "Press Enter/Space to choose an editor."
-	return `Command: ${presetCommandLine(preset, config)}`
 }
 
 function shellQuote(value: string): string {
@@ -248,113 +250,62 @@ async function createSyncDraft(
 	throw new Error("Could not allocate a unique temporary comment filename")
 }
 
-async function showSettings(ctx: ExtensionCommandContext): Promise<void> {
+function loadCommandConfig(ctx: ExtensionContext): ScopedCommentConfig {
+	const scoped: ScopedCommentConfig = { user: {}, workspace: {} }
+	for (const scope of commentConfigSpec.scopes) {
+		const path = commentConfigSpec.getPath(scope, ctx.cwd)
+		try {
+			scoped[scope] = commentConfigSpec.readFileOrEmpty(path)
+		} catch (error) {
+			const message = error instanceof Error ? error.message : String(error)
+			ctx.ui.notify(`Ignored unreadable Comment config: ${message}`, "warning")
+		}
+	}
+	return scoped
+}
+
+async function showSettings(ctx: ExtensionCommandContext, config: ScopedConfigState<CommentConfig>): Promise<void> {
 	if (ctx.mode !== "tui") {
 		ctx.ui.notify("/comment settings requires interactive TUI mode", "error")
 		return
 	}
 
-	let config: CommentConfig
-	try {
-		config = readConfigFile()
-	} catch (error) {
-		ctx.ui.notify((error as Error).message, "error")
-		return
-	}
+	const scoped = loadCommandConfig(ctx)
+	config.setScoped(scoped)
 
-	const save = () => writeConfigFile(config)
-
-	await ctx.ui.custom((_tui, theme, _keybindings, done) => {
-		const currentPresetLabel = presetLabel(config.editor?.preset)
-		const editorItem: SettingItem = {
-			id: "editor",
-			label: "Editor",
-			currentValue: currentPresetLabel,
-			description: editorSettingDescription(config),
-			values: EDITOR_PRESETS.map(preset => preset.label)
-		}
-		const items: SettingItem[] = [
-			editorItem,
-			{
-				id: "freeform-command",
-				label: "Freeform command",
-				currentValue: config.editor?.commandLine || "(not set)",
-				description: "Shell command for the Freeform editor preset. Use {file}, or the file path is appended.",
-				submenu: (_currentValue, done) =>
-					new ExtensionInputComponent(
-						"Freeform editor command (example: my-editor --reuse-window {file}):",
-						"Command",
-						value => {
-							config.editor ??= {}
-							config.editor.preset = FREEFORM_PRESET_ID
-							config.editor.commandLine = value.trim()
-							save()
-							done(config.editor.commandLine || "(not set)")
-						},
-						() => done(undefined),
-						{ tui: _tui }
-					)
-			}
-		]
-
-		const container = new Container()
-		container.addChild(new Text(theme.fg("accent", theme.bold("Comment")), 1, 1))
-		container.addChild(new Text(theme.fg("dim", `Config: ${configPath()}`), 1, 0))
-		const list = new SettingsList(
-			items,
-			Math.min(items.length, 8),
-			getSettingsListTheme(),
-			(id, newValue) => {
-				if (id === "editor") {
-					const preset = presetIdFromLabel(newValue)
-					if (preset) {
-						config.editor ??= {}
-						config.editor.preset = preset
-						save()
-						editorItem.description = editorSettingDescription(config)
-					}
-				} else if (id === "freeform-command") {
-					list.updateValue("editor", presetLabel(config.editor?.preset))
-					editorItem.description = editorSettingDescription(config)
-				}
-			},
-			() => done(undefined)
-		)
-		container.addChild(list)
-		return {
-			render: (width: number) => container.render(width),
-			invalidate: () => container.invalidate(),
-			handleInput: (data: string) => list.handleInput(data)
-		}
-	})
+	await ctx.ui.custom<void>(
+		(tui, theme, _keybindings, done) =>
+			new ScopedConfigEditor({
+				tui,
+				theme,
+				ctx,
+				spec: commentConfigSpec,
+				scoped,
+				onChange(_resolved, scoped) {
+					config.setScoped(scoped)
+				},
+				done
+			})
+	)
 }
 
-async function configuredEditorCommandLine(ctx: ExtensionCommandContext): Promise<string | undefined> {
-	let config: CommentConfig
-	try {
-		config = readConfigFile()
-	} catch (error) {
-		ctx.ui.notify((error as Error).message, "error")
-		return undefined
-	}
+async function configuredEditorCommandLine(
+	ctx: ExtensionCommandContext,
+	config: ScopedConfigState<CommentConfig>
+): Promise<string | undefined> {
+	config.setScoped(loadCommandConfig(ctx))
 
-	if (!editorCommandLine(config)) {
+	if (!editorCommandLine(config.getResolved())) {
 		if (ctx.mode !== "tui") {
 			ctx.ui.notify("Configure an editor with /comment settings before using /comment.", "error")
 			return undefined
 		}
 
 		ctx.ui.notify("No /comment editor configured. Opening /comment settings.", "warning")
-		await showSettings(ctx)
-		try {
-			config = readConfigFile()
-		} catch (error) {
-			ctx.ui.notify((error as Error).message, "error")
-			return undefined
-		}
+		await showSettings(ctx, config)
 	}
 
-	const commandLine = editorCommandLine(config)
+	const commandLine = editorCommandLine(config.getResolved())
 	if (!commandLine) {
 		ctx.ui.notify("Configure an editor with /comment settings before using /comment.", "error")
 		return undefined
@@ -385,13 +336,15 @@ function stopActive(): void {
 }
 
 export default function (pi: ExtensionAPI) {
+	const config = new ScopedConfigState(commentConfigSpec)
+
 	pi.registerCommand("comment", {
 		description: "Comment on or save the last assistant message",
 		handler: async (args, ctx) => {
 			const parsed = parseCommentArgs(args)
 
 			if (parsed.action === "settings") {
-				await showSettings(ctx)
+				await showSettings(ctx, config)
 				return
 			}
 			if (parsed.action === "help") {
@@ -412,7 +365,7 @@ export default function (pi: ExtensionAPI) {
 			}
 
 			if (parsed.action === "save") {
-				const configuredCommandLine = await configuredEditorCommandLine(ctx)
+				const configuredCommandLine = await configuredEditorCommandLine(ctx, config)
 				if (!configuredCommandLine) return
 
 				try {
@@ -431,7 +384,7 @@ export default function (pi: ExtensionAPI) {
 				return
 			}
 
-			const configuredCommandLine = await configuredEditorCommandLine(ctx)
+			const configuredCommandLine = await configuredEditorCommandLine(ctx, config)
 			if (!configuredCommandLine) return
 
 			stopActive()

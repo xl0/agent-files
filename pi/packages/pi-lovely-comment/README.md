@@ -19,6 +19,8 @@ After installing, restart pi or run `/reload`.
 - `/comment save <filename>` — save the last assistant message to `<filename>` without quote markers or prompt sync, then open it in the configured editor.
 - `/comment settings` — choose the GUI editor used for sync drafts.
 
+The default editor setting is `$EDITOR`.
+
 Explicit filenames are resolved relative to the current project unless absolute. Existing files are not overwritten.
 
 While sync is active:
@@ -28,6 +30,8 @@ While sync is active:
 - Sending the prompt submits the latest synced draft.
 
 Drafts are created under `.pi/comment/` in the current project and are ignored by git.
+
+Editor settings are stored in the user-scoped `@xl0/pi-lovely-config` file `~/.pi/agent/xl0-pi-lovely-comment.json`.
 
 ## Package contents
 

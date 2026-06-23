@@ -22,6 +22,10 @@
 		"format:check": "biome format .",
 		"biome:check": "biome check ."
 	},
+	"dependencies": {
+		"@xl0/pi-lovely-config": "*",
+		"typebox": "*"
+	},
 	"devDependencies": {
 		"@biomejs/biome": "^2.4.14",
 		"@earendil-works/pi-coding-agent": "^0.79.10",
