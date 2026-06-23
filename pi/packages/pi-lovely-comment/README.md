@@ -1,38 +1,48 @@
 # @xl0/pi-lovely-comment
 
-Pi package for the `/comment` extension.
+Lovely Pi package for the `/comment` extension.
+
+Inspired by this workflow:
+
+<p align="start">
+  <a href="https://www.youtube.com/watch?v=DPgJjRdQWrg&t=3813s">
+    <img src="https://img.youtube.com/vi/DPgJjRdQWrg/maxresdefault.jpg" alt="Watch the inspiration video on YouTube" width="640">
+  </a>
+</p>
 
 ## Install
 
-From this repository:
-
 ```bash
-pi install -l ./pi/packages/pi-lovely-comment
+pi install npm:@xl0/pi-lovely-comment
 ```
-
-After installing, restart pi or run `/reload`.
 
 ## Usage
 
-- `/comment` or `/comment sync` — quote the last assistant message into a temporary Markdown draft, open it in the configured editor, and keep the pi prompt synced with the draft contents.
-- `/comment sync <filename>` — same as sync, but use `<filename>` and keep the file after sync stops.
-- `/comment save <filename>` — save the last assistant message to `<filename>` without quote markers or prompt sync, then open it in the configured editor.
-- `/comment settings` — choose the GUI editor used for sync drafts.
+### Sync
 
-The default editor setting is `$EDITOR`.
-
-Explicit filenames are resolved relative to the current project unless absolute. Existing files are not overwritten.
+- `/comment`
+- `/comment sync`
+- `/comment sync <filename.md>` # Quote (`> `) the last assistant message into file, open it in the configured editor, and keep the pi prompt synced with the draft contents.
 
 While sync is active:
 
 - `Esc` stops syncing and leaves the prompt content as-is.
 - `Ctrl-C` cancels syncing and clears the prompt.
-- Sending the prompt submits the latest synced draft.
+- Sending the prompt (Enter) submits the latest synced draft.
 
-Drafts are created under `.pi/comment/` in the current project and are ignored by git.
+If called without a filename, the temporary draft will be created in `.pi/comment/` and deleted after the sync is done.
 
-Editor settings are stored in the user-scoped `@xl0/pi-lovely-config` file `~/.pi/agent/xl0-pi-lovely-comment.json`.
+### Save
 
-## Package contents
+- `/comment <filename.md>` — same as save.
+- `/comment save <filename.md>` — save the last assistant message to `<filename.md>` without quote markers or prompt sync, then open it in the configured editor.
 
-- `extensions/comment.ts` — Pi extension entrypoint.
+Save the last assistant message and open it in the editor.
+
+### Settings
+
+- `/comment settings` — choose the editor.
+
+The default editor is `$EDITOR`, but you can set a bunch of popular editors in settings, or a custom command.
+
+Editor settings are stored in `~/.pi/agent/xl0-pi-lovely-comment.json`.

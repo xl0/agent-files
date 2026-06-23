@@ -148,7 +148,7 @@ function launchEditor(commandLine: string, file: string, onFailure: (message: st
 }
 
 function usageText(): string {
-	return "Usage: /comment [sync [filename]] | save <filename> | settings"
+	return "Usage: /comment [filename] | sync [filename] | save <filename> | settings"
 }
 
 function splitFirstWord(value: string): [string, string] {
@@ -180,7 +180,7 @@ function parseCommentArgs(args: string | undefined): ParsedCommentArgs {
 		return { action: "save", file: stripOuterQuotes(rest) }
 	}
 
-	return { action: "error", message: `Unknown /comment mode "${command}". ${usageText()}` }
+	return { action: "save", file: stripOuterQuotes(trimmed) }
 }
 
 function resolveUserFile(ctx: ExtensionCommandContext, filename: string): string {
