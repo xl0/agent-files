@@ -31,6 +31,8 @@ The script will:
 4. Fetch from `origin` when stale (default interval: 300s).
 5. Attempt a fast-forward merge if the checkout is clean and has an upstream.
 
+The script might take a long time to finish. Give it a generous timeout (10 min, more for when you expect the repo might be very large)
+
 ## Update strategy
 
 - Default behavior is **throttled refresh** (every 5 minutes) to avoid unnecessary network calls.
