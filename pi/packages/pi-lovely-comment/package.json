@@ -1,6 +1,6 @@
 {
 	"name": "@xl0/pi-lovely-comment",
-	"version": "0.1.0",
+	"version": "0.1.1",
 	"description": "Open the last assistant message in your editor and sync edits back into the prompt",
 	"license": "MIT",
 	"type": "module",
@@ -43,8 +43,7 @@
 		"biome:check": "biome check ."
 	},
 	"dependencies": {
-		"@xl0/pi-lovely-config": "*",
-		"typebox": "*"
+		"@xl0/pi-lovely-config": ">=0 <1"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^2.4.14",
