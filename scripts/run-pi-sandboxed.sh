@@ -10,8 +10,8 @@ fi
 
 print_help() {
   cat >&2 <<EOF
-Usage: $prog_name [--no-ssh] [--no-runtime] [--ro-runtime] [--ro-bun] [--ro-cache] [--ro-vscode] [--ro-node-modules] [--no-cuda] [--writable PATH ...] [PI_ARG ...]
-       $prog_name [--no-ssh] [--no-runtime] [--ro-runtime] [--ro-bun] [--ro-cache] [--ro-vscode] [--ro-node-modules] [--no-cuda] [--writable PATH ...] [-- COMMAND [ARG ...]]
+Usage: $prog_name [--no-ssh] [--no-runtime] [--ro-runtime] [--ro-bun] [--ro-npm] [--ro-cache] [--ro-vscode] [--ro-node-modules] [--no-cuda] [--writable PATH ...] [PI_ARG ...]
+       $prog_name [--no-ssh] [--no-runtime] [--ro-runtime] [--ro-bun] [--ro-npm] [--ro-cache] [--ro-vscode] [--ro-node-modules] [--no-cuda] [--writable PATH ...] [-- COMMAND [ARG ...]]
 
 Runs 'pi' in bubblewrap by default.
 Use '-- COMMAND ...' to run something other than 'pi'.
@@ -24,6 +24,7 @@ Bubblewrap setup:
 - network allowed by default
 - ~/.pi mounted read-write by default
 - ~/.bun mounted read-write by default
+- ~/.npm mounted read-write by default
 - ~/.cache mounted read-write by default
 - VS Code user-data dirs mounted read-write by default if present
 - ~/.config/matplotlib hidden behind an empty writable tmpfs
@@ -37,6 +38,7 @@ Options:
                      default: mount XDG_RUNTIME_DIR read-write if present
   --ro-runtime       keep XDG_RUNTIME_DIR read-only
   --ro-bun           keep ~/.bun read-only; default: mount ~/.bun read-write if HOME exists
+  --ro-npm           keep ~/.npm read-only; default: mount ~/.npm read-write if HOME exists
   --ro-cache         keep ~/.cache read-only; default: mount ~/.cache read-write if HOME exists
   --ro-vscode        keep VS Code user-data dirs read-only; default: mount existing dirs read-write
   --ro-node-modules  keep ~/node_modules read-only; default: mount read-write if present
@@ -52,6 +54,7 @@ Examples:
   $prog_name --no-runtime -- pi
   $prog_name --ro-runtime
   $prog_name --ro-bun
+  $prog_name --ro-npm
   $prog_name --ro-cache
   $prog_name --ro-vscode
   $prog_name --ro-node-modules
@@ -62,6 +65,7 @@ hide_ssh=0
 hide_runtime_dir=0
 ro_runtime=0
 ro_bun=0
+ro_npm=0
 ro_cache=0
 ro_vscode=0
 ro_node_modules=0
@@ -75,6 +79,7 @@ while [ "$#" -gt 0 ]; do
     --no-runtime) hide_runtime_dir=1 ;;
     --ro-runtime) ro_runtime=1 ;;
     --ro-bun) ro_bun=1 ;;
+    --ro-npm) ro_npm=1 ;;
     --ro-cache) ro_cache=1 ;;
     --ro-vscode) ro_vscode=1 ;;
     --ro-node-modules) ro_node_modules=1 ;;
@@ -134,6 +139,11 @@ extra_writable+=("$home_dir/.pi")
 if [ "$ro_bun" -eq 0 ]; then
   mkdir -p "$home_dir/.bun"
   extra_writable+=("$home_dir/.bun")
+fi
+
+if [ "$ro_npm" -eq 0 ]; then
+  mkdir -p "$home_dir/.npm"
+  extra_writable+=("$home_dir/.npm")
 fi
 
 if [ "$ro_cache" -eq 0 ]; then
