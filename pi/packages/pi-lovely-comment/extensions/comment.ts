@@ -4,81 +4,35 @@ import { mkdir, writeFile } from "node:fs/promises"
 import { basename, dirname, isAbsolute, join } from "node:path"
 import { CONFIG_DIR_NAME, type ExtensionAPI, type ExtensionCommandContext, type ExtensionContext } from "@earendil-works/pi-coding-agent"
 import { matchesKey } from "@earendil-works/pi-tui"
-import {
-	type ConfigFromFields,
-	defineScopedConfigSpec,
-	type ResolvedConfig,
-	ScopedConfigEditor,
-	type ScopedConfigField,
-	type ScopedConfigPatch,
-	ScopedConfigState
-} from "@xl0/pi-lovely-config"
+import { defineScopedConfig, field, ScopedConfigEditor } from "@xl0/pi-lovely-config"
 
 const STATUS_KEY = "comment"
-const FREEFORM_PRESET_ID = "freeform"
-const ENV_EDITOR_PRESET_ID = "$EDITOR"
-const CONFIG_FILE_NAME = "xl0-pi-lovely-comment.json"
-const EDITOR_PRESET_IDS = [ENV_EDITOR_PRESET_ID, "code", "cursor", "zed", "windsurf", FREEFORM_PRESET_ID] as const
+const USAGE_TEXT = "Usage: /comment [filename] | sync [filename] | save <filename> | settings"
 
-type EditorPresetId = (typeof EDITOR_PRESET_IDS)[number]
-
-type EditorPreset = {
-	id: EditorPresetId
-	label: string
-	commandLine?: string
-}
-
-const EDITOR_PRESETS: EditorPreset[] = [
-	{ id: ENV_EDITOR_PRESET_ID, label: "$EDITOR" },
-	{ id: "code", label: "VS Code", commandLine: "code {file}" },
-	{ id: "cursor", label: "Cursor", commandLine: "cursor {file}" },
-	{ id: "zed", label: "Zed", commandLine: "zed {file}" },
-	{ id: "windsurf", label: "Windsurf", commandLine: "windsurf {file}" },
-	{ id: FREEFORM_PRESET_ID, label: "Freeform" }
-]
-
-const commentConfigFields = [
-	{
-		key: "editor",
-		label: "Editor",
-		description: "GUI editor used for /comment drafts and saved assistant messages.",
-		kind: "enum",
-		values: EDITOR_PRESET_IDS,
-		default: ENV_EDITOR_PRESET_ID,
-		valueDescriptions: Object.fromEntries(
-			EDITOR_PRESETS.map(preset => [
-				preset.id,
-				preset.id === ENV_EDITOR_PRESET_ID
-					? "Command from the EDITOR environment variable."
-					: preset.commandLine
-						? `Command: ${preset.commandLine}`
-						: "Use the Freeform command."
-			])
-		)
-	},
-	{
-		key: "freeformCommand",
-		label: "Freeform command",
-		description: "Shell command for the Freeform editor preset. Use {file}, or the file path is appended.",
-		kind: "string",
-		default: "",
-		depth: 1,
-		visibleWhen: ({ get }) => get("editor") === FREEFORM_PRESET_ID
+const commentConfig = defineScopedConfig({
+	fileName: "xl0-pi-lovely-comment.json",
+	scope: "user",
+	schema: {
+		editor: field.enum(["$EDITOR", "code", "cursor", "zed", "windsurf", "freeform"], "$EDITOR", {
+			label: "Editor",
+			description: "GUI editor used for /comment drafts and saved assistant messages.",
+			valueDescriptions: {
+				$EDITOR: "Command from the EDITOR environment variable.",
+				code: "Command: code {file}",
+				cursor: "Command: cursor {file}",
+				zed: "Command: zed {file}",
+				windsurf: "Command: windsurf {file}",
+				freeform: "Use the Freeform command."
+			}
+		}),
+		freeformCommand: field.string("", {
+			label: "Freeform command",
+			description: "Shell command for the Freeform editor preset. Use {file}, or the file path is appended.",
+			depth: 1,
+			visibleWhen: ({ get }) => get("editor") === "freeform"
+		})
 	}
-] as const satisfies readonly ScopedConfigField[]
-
-type CommentConfig = ConfigFromFields<typeof commentConfigFields>
-type ScopedCommentConfig = ScopedConfigPatch<CommentConfig>
-
-const commentConfigSpec = defineCommentConfigSpec()
-
-function defineCommentConfigSpec() {
-	return defineScopedConfigSpec({
-		fileName: CONFIG_FILE_NAME,
-		scope: "user",
-		fields: commentConfigFields
-	})
-}
+})
 
 type ActiveComment = {
 	file: string
@@ -98,19 +52,11 @@ type ParsedCommentArgs =
 
 let active: ActiveComment | undefined
 
-function presetById(id: string | undefined): EditorPreset | undefined {
-	return EDITOR_PRESETS.find(preset => preset.id === id)
-}
-
-function editorCommandLine(config: ResolvedConfig<CommentConfig>): string | undefined {
-	const editor = commentConfigSpec.get(config, "editor")
-	if (editor === ENV_EDITOR_PRESET_ID) return (process.env as { EDITOR?: string }).EDITOR?.trim() || undefined
-	const preset = presetById(editor)
-	if (!preset) return undefined
-	if (preset.id === FREEFORM_PRESET_ID) {
-		return commentConfigSpec.get(config, "freeformCommand").trim() || undefined
-	}
-	return preset.commandLine
+function editorCommandLine(config: typeof commentConfig.defaults): string | undefined {
+	const editor = config.editor
+	if (editor === "$EDITOR") return (process.env as { EDITOR?: string }).EDITOR?.trim() || undefined
+	if (editor === "freeform") return config.freeformCommand.trim() || undefined
+	return `${editor} {file}`
 }
 
 function shellQuote(value: string): string {
@@ -147,40 +93,24 @@ function launchEditor(commandLine: string, file: string, onFailure: (message: st
 		.unref()
 }
 
-function usageText(): string {
-	return "Usage: /comment [filename] | sync [filename] | save <filename> | settings"
-}
-
-function splitFirstWord(value: string): [string, string] {
-	const match = /^(\S+)(?:\s+([\s\S]*))?$/.exec(value)
-	return [match?.[1] ?? "", match?.[2]?.trim() ?? ""]
-}
-
-function stripOuterQuotes(value: string): string {
-	if (value.length >= 2) {
-		const first = value[0]
-		const last = value.at(-1)
-		if ((first === '"' && last === '"') || (first === "'" && last === "'")) {
-			return value.slice(1, -1)
-		}
-	}
-	return value
+function unquote(value: string): string {
+	return value.replace(/^(['"])([\s\S]*)\1$/, "$2")
 }
 
 function parseCommentArgs(args: string | undefined): ParsedCommentArgs {
 	const trimmed = (args ?? "").trim()
 	if (!trimmed) return { action: "sync" }
 
-	const [command, rest] = splitFirstWord(trimmed)
+	const [, command = "", rest = ""] = /^(\S+)(?:\s+([\s\S]*))?$/.exec(trimmed) ?? []
 	if (command === "settings" || command === "config") return { action: "settings" }
 	if (command === "help" || command === "--help" || command === "-h") return { action: "help" }
-	if (command === "sync") return rest ? { action: "sync", file: stripOuterQuotes(rest) } : { action: "sync" }
+	if (command === "sync") return rest ? { action: "sync", file: unquote(rest.trim()) } : { action: "sync" }
 	if (command === "save") {
-		if (!rest) return { action: "error", message: `/comment save requires a filename. ${usageText()}` }
-		return { action: "save", file: stripOuterQuotes(rest) }
+		if (!rest) return { action: "error", message: `/comment save requires a filename. ${USAGE_TEXT}` }
+		return { action: "save", file: unquote(rest.trim()) }
 	}
 
-	return { action: "save", file: stripOuterQuotes(trimmed) }
+	return { action: "save", file: unquote(trimmed) }
 }
 
 function resolveUserFile(ctx: ExtensionCommandContext, filename: string): string {
@@ -250,62 +180,61 @@ async function createSyncDraft(
 	throw new Error("Could not allocate a unique temporary comment filename")
 }
 
-function loadCommandConfig(ctx: ExtensionContext): ScopedCommentConfig {
-	const scoped: ScopedCommentConfig = { user: {}, workspace: {} }
-	for (const scope of commentConfigSpec.scopes) {
-		const path = commentConfigSpec.getPath(scope, ctx.cwd)
-		try {
-			scoped[scope] = commentConfigSpec.readFileOrEmpty(path)
-		} catch (error) {
-			const message = error instanceof Error ? error.message : String(error)
-			ctx.ui.notify(`Ignored unreadable Comment config: ${message}`, "warning")
+function loadCommandConfig(ctx: ExtensionContext): typeof commentConfig | undefined {
+	try {
+		commentConfig.load(ctx.cwd)
+		if (commentConfig.warnings.length > 0) {
+			ctx.ui.notify(commentConfig.warnings.map(warning => `${warning.path}: ${warning.message}`).join("\n"), "warning")
 		}
+		return commentConfig
+	} catch (error) {
+		const message = error instanceof Error ? error.message : String(error)
+		ctx.ui.notify(`Ignored unreadable Comment config: ${message}`, "warning")
+		return undefined
 	}
-	return scoped
 }
 
-async function showSettings(ctx: ExtensionCommandContext, config: ScopedConfigState<CommentConfig>): Promise<void> {
+async function showSettings(ctx: ExtensionCommandContext): Promise<typeof commentConfig | undefined> {
 	if (ctx.mode !== "tui") {
 		ctx.ui.notify("/comment settings requires interactive TUI mode", "error")
-		return
+		return undefined
 	}
 
-	const scoped = loadCommandConfig(ctx)
-	config.setScoped(scoped)
+	const loaded = loadCommandConfig(ctx)
+	if (!loaded) {
+		ctx.ui.notify(`Fix or remove ${commentConfig.path("user", ctx.cwd)} before editing /comment settings.`, "error")
+		return undefined
+	}
 
 	await ctx.ui.custom<void>(
 		(tui, theme, _keybindings, done) =>
 			new ScopedConfigEditor({
 				tui,
 				theme,
-				ctx,
-				spec: commentConfigSpec,
-				scoped,
-				onChange(_resolved, scoped) {
-					config.setScoped(scoped)
-				},
+				config: loaded,
+				onChange() {},
 				done
 			})
 	)
+
+	return loaded
 }
 
-async function configuredEditorCommandLine(
-	ctx: ExtensionCommandContext,
-	config: ScopedConfigState<CommentConfig>
-): Promise<string | undefined> {
-	config.setScoped(loadCommandConfig(ctx))
+async function configuredEditorCommandLine(ctx: ExtensionCommandContext): Promise<string | undefined> {
+	let loaded = loadCommandConfig(ctx)
+	let commandLine = editorCommandLine(loaded?.value ?? commentConfig.defaults)
 
-	if (!editorCommandLine(config.getResolved())) {
+	if (!commandLine) {
 		if (ctx.mode !== "tui") {
 			ctx.ui.notify("Configure an editor with /comment settings before using /comment.", "error")
 			return undefined
 		}
 
 		ctx.ui.notify("No /comment editor configured. Opening /comment settings.", "warning")
-		await showSettings(ctx, config)
+		loaded = (await showSettings(ctx)) ?? loaded
+		commandLine = editorCommandLine(loaded?.value ?? commentConfig.defaults)
 	}
 
-	const commandLine = editorCommandLine(config.getResolved())
 	if (!commandLine) {
 		ctx.ui.notify("Configure an editor with /comment settings before using /comment.", "error")
 		return undefined
@@ -336,19 +265,17 @@ function stopActive(): void {
 }
 
 export default function (pi: ExtensionAPI) {
-	const config = new ScopedConfigState(commentConfigSpec)
-
 	pi.registerCommand("comment", {
 		description: "Comment on or save the last assistant message",
 		handler: async (args, ctx) => {
 			const parsed = parseCommentArgs(args)
 
 			if (parsed.action === "settings") {
-				await showSettings(ctx, config)
+				await showSettings(ctx)
 				return
 			}
 			if (parsed.action === "help") {
-				ctx.ui.notify(usageText(), "info")
+				ctx.ui.notify(USAGE_TEXT, "info")
 				return
 			}
 			if (parsed.action === "error") {
@@ -365,7 +292,7 @@ export default function (pi: ExtensionAPI) {
 			}
 
 			if (parsed.action === "save") {
-				const configuredCommandLine = await configuredEditorCommandLine(ctx, config)
+				const configuredCommandLine = await configuredEditorCommandLine(ctx)
 				if (!configuredCommandLine) return
 
 				try {
@@ -384,29 +311,23 @@ export default function (pi: ExtensionAPI) {
 				return
 			}
 
-			const configuredCommandLine = await configuredEditorCommandLine(ctx, config)
+			const configuredCommandLine = await configuredEditorCommandLine(ctx)
 			if (!configuredCommandLine) return
 
 			stopActive()
 
 			const initialText = quoteText(text)
-			let file: string
-			let cleanupFile: boolean
+			let state: ActiveComment
 
 			try {
-				const draft = await createSyncDraft(ctx, initialText, parsed.file)
-				file = draft.file
-				cleanupFile = draft.cleanupFile
+				state = {
+					...(await createSyncDraft(ctx, initialText, parsed.file)),
+					ctx,
+					lastText: initialText
+				}
 			} catch (error) {
 				ctx.ui.notify(`Could not create comment draft: ${(error as Error).message}`, "error")
 				return
-			}
-
-			const state: ActiveComment = {
-				file,
-				cleanupFile,
-				ctx,
-				lastText: initialText
 			}
 
 			active = state
@@ -416,14 +337,8 @@ export default function (pi: ExtensionAPI) {
 			state.unsubscribeInput = ctx.ui.onTerminalInput(data => {
 				if (active !== state) return undefined
 
-				if (matchesKey(data, "escape")) {
-					stopActive()
-					ctx.ui.notify("Comment sync stopped", "info")
-					return { consume: true }
-				}
-
-				if (matchesKey(data, "ctrl+c")) {
-					ctx.ui.setEditorText("")
+				if (matchesKey(data, "escape") || matchesKey(data, "ctrl+c")) {
+					if (matchesKey(data, "ctrl+c")) ctx.ui.setEditorText("")
 					stopActive()
 					ctx.ui.notify("Comment sync stopped", "info")
 					return { consume: true }
@@ -436,7 +351,7 @@ export default function (pi: ExtensionAPI) {
 				if (active !== state) return
 
 				try {
-					const text = readFileSync(file, "utf8")
+					const text = readFileSync(state.file, "utf8")
 					if (active === state && text !== state.lastText) {
 						state.lastText = text
 						ctx.ui.setEditorText(text)
@@ -449,8 +364,8 @@ export default function (pi: ExtensionAPI) {
 				}
 			}
 
-			state.watcher = watch(dirname(file), (_eventType, filename) => {
-				if (filename == null || filename === basename(file)) syncOnce()
+			state.watcher = watch(dirname(state.file), (_eventType, filename) => {
+				if (filename == null || filename === basename(state.file)) syncOnce()
 			})
 			state.watcher.on("error", error => {
 				if (active === state) {
@@ -460,22 +375,19 @@ export default function (pi: ExtensionAPI) {
 			})
 			syncOnce()
 
-			launchEditor(configuredCommandLine, file, message => {
+			launchEditor(configuredCommandLine, state.file, message => {
 				if (active !== state) return
 				ctx.ui.notify(message, "error")
 				stopActive()
 			})
 
-			ctx.ui.notify(`Comment draft opened: ${file} (Esc stops sync, Ctrl-C cancels)`, "info")
+			ctx.ui.notify(`Comment draft opened: ${state.file} (Esc stops sync, Ctrl-C cancels)`, "info")
 		}
 	})
 
 	pi.on("input", async event => {
 		const state = active
-		if (!state) {
-			return { action: "continue" }
-		}
-		if (event.source !== "interactive") {
+		if (!state || event.source !== "interactive") {
 			return { action: "continue" }
 		}
 
