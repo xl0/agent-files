@@ -27,14 +27,14 @@ Then edit the new `AGENTS.md`, and optionally feed the edits back here if they a
 
 `scripts/run-pi-sandboxed.sh` provides a simple bubblewrap (https://github.com/containers/bubblewrap)
 
-It mounts / read-only, keeps ~/.pi, ~/.bun, ~/.cache, VS Code user-data dirs, ~/node_modules, and XDG_RUNTIME_DIR writable by default, mounts NVIDIA device nodes when present, and runs pi inside the sandbox. Very easy, reasonably secure.
+It mounts / read-only, keeps ~/.pi, ~/.bun, ~/.npm, ~/.cache, conda/mamba dirs, VS Code user-data dirs, ~/node_modules, and XDG_RUNTIME_DIR writable by default, mounts NVIDIA device nodes when present, and runs pi inside the sandbox. Very easy, reasonably secure.
 Escape is not impossible, but it protects against lots of oopsies.
 
 Copy it somewhere in your $PATH: `cp scripts/run-pi-sandboxed.sh ~/.local/bin/`
 
 ```
-Usage: scripts/run-pi-sandboxed.sh [--no-ssh] [--no-runtime] [--ro-runtime] [--ro-bun] [--ro-cache] [--ro-vscode] [--ro-node-modules] [--no-cuda] [--writable PATH ...] [PI_ARG ...]
-       scripts/run-pi-sandboxed.sh [--no-ssh] [--no-runtime] [--ro-runtime] [--ro-bun] [--ro-cache] [--ro-vscode] [--ro-node-modules] [--no-cuda] [--writable PATH ...] [-- COMMAND [ARG ...]]
+Usage: scripts/run-pi-sandboxed.sh [--no-ssh] [--no-runtime] [--ro-runtime] [--ro-bun] [--ro-npm] [--ro-cache] [--ro-conda] [--ro-vscode] [--ro-node-modules] [--no-cuda] [--writable PATH ...] [PI_ARG ...]
+       scripts/run-pi-sandboxed.sh [--no-ssh] [--no-runtime] [--ro-runtime] [--ro-bun] [--ro-npm] [--ro-cache] [--ro-conda] [--ro-vscode] [--ro-node-modules] [--no-cuda] [--writable PATH ...] [-- COMMAND [ARG ...]]
 
 Runs `pi` in bubblewrap by default.
 Use `-- COMMAND ...` to run something other than `pi`.
@@ -42,12 +42,16 @@ Use `-- COMMAND ...` to run something other than `pi`.
 Bubblewrap setup:
 - host / mounted read-only
 - current repo mounted read-write
-- private /tmp
+- repo .pi/sandbox/tmp mounted at /tmp
+- repo .pi/sandbox/var-tmp mounted at /var/tmp
 - network allowed by default
 - ~/.pi mounted read-write by default
 - ~/.bun mounted read-write by default
+- ~/.npm mounted read-write by default
 - ~/.cache mounted read-write by default
+- conda/mamba dirs mounted read-write by default
 - VS Code user-data dirs mounted read-write by default if present
+- ~/.config/matplotlib hidden behind an empty writable tmpfs
 - ~/node_modules mounted read-write by default if present
 - XDG runtime dir mounted read-write by default
 - NVIDIA device nodes mounted by default if present, so CUDA/nvidia-smi can work
@@ -58,7 +62,10 @@ Options:
                      default: mount XDG_RUNTIME_DIR read-write if present
   --ro-runtime       keep XDG_RUNTIME_DIR read-only
   --ro-bun           keep ~/.bun read-only; default: mount ~/.bun read-write if HOME exists
+  --ro-npm           keep ~/.npm read-only; default: mount ~/.npm read-write if HOME exists
   --ro-cache         keep ~/.cache read-only; default: mount ~/.cache read-write if HOME exists
+  --ro-conda         keep conda/mamba dirs read-only; default: mount ~/.conda,
+                     ~/.mamba, detected roots, and configured env/pkg dirs read-write
   --ro-vscode        keep VS Code user-data dirs read-only; default: mount existing dirs read-write
   --ro-node-modules  keep ~/node_modules read-only; default: mount read-write if present
   --no-cuda          do not mount NVIDIA device nodes into the sandbox
@@ -73,7 +80,9 @@ Examples:
   scripts/run-pi-sandboxed.sh --no-runtime -- pi
   scripts/run-pi-sandboxed.sh --ro-runtime
   scripts/run-pi-sandboxed.sh --ro-bun
+  scripts/run-pi-sandboxed.sh --ro-npm
   scripts/run-pi-sandboxed.sh --ro-cache
+  scripts/run-pi-sandboxed.sh --ro-conda
   scripts/run-pi-sandboxed.sh --ro-vscode
   scripts/run-pi-sandboxed.sh --ro-node-modules
   scripts/run-pi-sandboxed.sh --no-cuda
