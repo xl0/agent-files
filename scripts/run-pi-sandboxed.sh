@@ -149,6 +149,7 @@ add_existing_writable() {
 
 add_writable_dir() {
   local path=$1
+  path=$(realpath -m "$path")
   mkdir -p "$path"
   extra_writable+=("$path")
 }
