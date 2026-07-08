@@ -4,8 +4,6 @@ Automatically gives unnamed Pi sessions a short, task-specific name after a conf
 
 ## Install
 
-Requires Pi 0.80 or newer.
-
 ```bash
 pi install npm:@xl0/pi-lovely-rename
 ```
@@ -22,9 +20,8 @@ The extension auto-renames a session only when it has no session name already. M
 
 Defaults:
 
-- rename after 6 assistant turns
+- rename after 3 assistant turns
 - token trigger disabled
-- use the current session model for naming
 
 Commands:
 
@@ -47,8 +44,19 @@ Fields:
 
 ## Model request
 
-Naming uses the current model through `pi-ai` with a compact serialized conversation excerpt and a dedicated naming prompt. It does not modify or reuse the active session system prompt.
+Naming always uses the current session model through `pi-ai` with a compact serialized conversation excerpt and a dedicated naming prompt. It does not reuse the active session system prompt.
 
-## About `/name`
+## Related projects
 
-This package does not override Pi's built-in `/name` command in interactive mode. Pi currently handles built-in slash commands before extension commands, so an extension command named `name` is preempted by the TUI built-in. Use `/rename` for LLM-generated names.
+|  |  |
+| --- | --- |
+| [Pi Lovely Web](https://github.com/xl0/pi-lovely-web) | `web_search`, `web_fetch`, `web_image` via Firecrawl, Exa, Tavily, Brave |
+| [Pi Lovely Dev Tools](https://github.com/xl0/pi-lovely-dev-tools) | `/tool`, `/show-sysprompt`, `/show-context`, `/llm-stats` |
+| [Pi Lovely Codex](https://github.com/xl0/pi-lovely-codex) | GPT fast mode and Codex-style `apply_patch` |
+| [Pi Lovely IDE](https://github.com/xl0/pi-lovely-ide) | IDE integration |
+| [Pi Lovely Config](https://github.com/xl0/pi-lovely-config) | scoped config helpers for Pi extensions |
+| [Pi Lovely Comment](https://github.com/xl0/agent-files/tree/master/pi/packages/pi-lovely-comment) | open the last assistant message in your editor and sync edits back into the prompt |
+
+---
+
+Like this work? [Hire me](https://alexey.work/cv?ref=pi-lovely-rename)

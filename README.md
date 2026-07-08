@@ -18,7 +18,8 @@ Then edit the new `AGENTS.md`, and optionally feed the edits back here if they a
 ## Packages to install:
 
 - `pi install -l npm:@xl0/pi-lovely-dev-tools` — `/tool` and `/show-sysprompt` commands.
-- `pi install -l ./pi/packages/pi-lovely-comment` — `/comment` GUI-editor draft workflow.
+- `pi install -l npm:@xl0/pi-lovely-comment` — `/comment` GUI-editor draft workflow.
+- `pi install -l npm:@xl0/pi-lovely-rename` — automatic and manual session naming.
 - `pi install -l npm:@xl0/pi-ide-integration` — IDE selection/@mention integration.
 - `pi install -l npm:@xl0/pi-lovely-web` — `web_search`/`web_fetch`/`web_image`.
 - `pi install -l git:git@github.com:xl0/pi-agent-notebook-extension` — `.ipynb` read/edit tools + VSCode/Jupyter execution.

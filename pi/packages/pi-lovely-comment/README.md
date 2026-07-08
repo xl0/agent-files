@@ -56,8 +56,8 @@ Editor settings are stored in `~/.pi/agent/xl0-pi-lovely-comment.json`.
 | [Pi Lovely Codex](https://github.com/xl0/pi-lovely-codex) | GPT fast mode and Codex-style `apply_patch` |
 | [Pi Lovely IDE](https://github.com/xl0/pi-lovely-ide) | IDE integration |
 | [Pi Lovely Config](https://github.com/xl0/pi-lovely-config) | scoped config helpers for Pi extensions |
+| [Pi Lovely Rename](https://github.com/xl0/agent-files/tree/master/pi/packages/pi-lovely-rename) | automatic session naming |
 
 ---
 
 Like this work? [Hire me](https://alexey.work/cv?ref=pi-lovely-comment)
-

@@ -18,7 +18,7 @@ const renameConfig = defineScopedConfig({
 	fileName: "xl0-pi-lovely-rename.json",
 	scope: "user",
 	schema: {
-		afterSteps: field.number(6, {
+		afterSteps: field.number(3, {
 			label: "Auto-rename after assistant turns",
 			description: "Automatically name unnamed sessions after this many assistant turns. Set to 0 to disable this trigger.",
 			min: 0,
