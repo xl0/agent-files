@@ -1,6 +1,6 @@
 {
 	"name": "@xl0/pi-lovely-rename",
-	"version": "0.1.0",
+	"version": "0.1.1",
 	"description": "Automatically name Pi sessions from conversation context",
 	"license": "MIT",
 	"type": "module",

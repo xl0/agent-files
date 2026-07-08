@@ -8,11 +8,9 @@ const MAX_CONVERSATION_CHARS = 60_000
 const NAMING_SYSTEM_PROMPT = `You name coding-agent sessions.
 Return only the session name, no quotes, no punctuation-only decoration.`
 
-const NAMING_PROMPT = `Create a short, specific display name for this Pi coding-agent session.
-Prefer an imperative or noun phrase that captures the actual task.
+const NAMING_PROMPT = `Create a short, specific display name for this LLM agent session.
 Use 3 to 8 words. Avoid generic names like "Coding Session" or "Project Work".
-Do not answer the prior task.
-Return exactly one line containing only the name.`
+Do not answer the prior task. Return exactly one line containing only the name.`
 
 const renameConfig = defineScopedConfig({
 	fileName: "xl0-pi-lovely-rename.json",
