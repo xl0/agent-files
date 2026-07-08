@@ -10,8 +10,8 @@ fi
 
 print_help() {
   cat >&2 <<EOF
-Usage: $prog_name [--no-ssh] [--no-runtime] [--ro-runtime] [--ro-bun] [--ro-npm] [--ro-cache] [--ro-vscode] [--ro-node-modules] [--no-cuda] [--writable PATH ...] [PI_ARG ...]
-       $prog_name [--no-ssh] [--no-runtime] [--ro-runtime] [--ro-bun] [--ro-npm] [--ro-cache] [--ro-vscode] [--ro-node-modules] [--no-cuda] [--writable PATH ...] [-- COMMAND [ARG ...]]
+Usage: $prog_name [--no-ssh] [--no-runtime] [--ro-runtime] [--ro-bun] [--ro-npm] [--ro-cache] [--ro-conda] [--ro-vscode] [--ro-node-modules] [--no-cuda] [--writable PATH ...] [PI_ARG ...]
+       $prog_name [--no-ssh] [--no-runtime] [--ro-runtime] [--ro-bun] [--ro-npm] [--ro-cache] [--ro-conda] [--ro-vscode] [--ro-node-modules] [--no-cuda] [--writable PATH ...] [-- COMMAND [ARG ...]]
 
 Runs 'pi' in bubblewrap by default.
 Use '-- COMMAND ...' to run something other than 'pi'.
@@ -26,6 +26,7 @@ Bubblewrap setup:
 - ~/.bun mounted read-write by default
 - ~/.npm mounted read-write by default
 - ~/.cache mounted read-write by default
+- conda/mamba dirs mounted read-write by default
 - VS Code user-data dirs mounted read-write by default if present
 - ~/.config/matplotlib hidden behind an empty writable tmpfs
 - ~/node_modules mounted read-write by default if present
@@ -40,6 +41,8 @@ Options:
   --ro-bun           keep ~/.bun read-only; default: mount ~/.bun read-write if HOME exists
   --ro-npm           keep ~/.npm read-only; default: mount ~/.npm read-write if HOME exists
   --ro-cache         keep ~/.cache read-only; default: mount ~/.cache read-write if HOME exists
+  --ro-conda         keep conda/mamba dirs read-only; default: mount ~/.conda,
+                     ~/.mamba, detected roots, and configured env/pkg dirs read-write
   --ro-vscode        keep VS Code user-data dirs read-only; default: mount existing dirs read-write
   --ro-node-modules  keep ~/node_modules read-only; default: mount read-write if present
   --no-cuda          do not mount NVIDIA device nodes into the sandbox
@@ -56,6 +59,7 @@ Examples:
   $prog_name --ro-bun
   $prog_name --ro-npm
   $prog_name --ro-cache
+  $prog_name --ro-conda
   $prog_name --ro-vscode
   $prog_name --ro-node-modules
 EOF
@@ -67,6 +71,7 @@ ro_runtime=0
 ro_bun=0
 ro_npm=0
 ro_cache=0
+ro_conda=0
 ro_vscode=0
 ro_node_modules=0
 mount_cuda=1
@@ -81,6 +86,7 @@ while [ "$#" -gt 0 ]; do
     --ro-bun) ro_bun=1 ;;
     --ro-npm) ro_npm=1 ;;
     --ro-cache) ro_cache=1 ;;
+    --ro-conda) ro_conda=1 ;;
     --ro-vscode) ro_vscode=1 ;;
     --ro-node-modules) ro_node_modules=1 ;;
     --no-cuda) mount_cuda=0 ;;
@@ -133,6 +139,65 @@ args=(
   --chdir "$repo_dir"
 )
 
+add_existing_writable() {
+  local path=$1
+  if [ -e "$path" ]; then
+    extra_writable+=("$path")
+  fi
+  return 0
+}
+
+add_writable_dir() {
+  local path=$1
+  mkdir -p "$path"
+  extra_writable+=("$path")
+}
+
+add_colon_writable_dirs() {
+  local value=${1:-}
+  local path
+  local paths=()
+  local IFS=:
+
+  [ -n "$value" ] || return 0
+
+  read -r -a paths <<<"$value"
+  for path in "${paths[@]}"; do
+    [ -n "$path" ] || continue
+    add_writable_dir "$path"
+  done
+}
+
+add_tool_prefix_writable() {
+  local tool=$1
+  local tool_path real_tool prefix
+
+  tool_path=$(command -v "$tool" 2>/dev/null || true)
+  [ -n "$tool_path" ] || return 0
+  [ -e "$tool_path" ] || return 0
+
+  real_tool=$(realpath "$tool_path" 2>/dev/null || true)
+  case "$real_tool" in
+    */bin/"$tool")
+      prefix=${real_tool%/bin/$tool}
+      [ -e "$prefix/conda-meta" ] || [ -e "$prefix/pkgs" ] || [ -e "$prefix/envs" ] || return 0
+      add_existing_writable "$prefix"
+      ;;
+  esac
+  return 0
+}
+
+add_conda_base_writable() {
+  local tool=$1
+  local base
+
+  command -v "$tool" >/dev/null 2>&1 || return 0
+  base=$("$tool" info --base 2>/dev/null | awk 'NF { print; exit }' || true)
+  [ -n "$base" ] || return 0
+  [ -e "$base/conda-meta" ] || [ -e "$base/pkgs" ] || [ -e "$base/envs" ] || return 0
+  add_existing_writable "$base"
+}
+
 mkdir -p "$home_dir/.pi"
 extra_writable+=("$home_dir/.pi")
 
@@ -149,6 +214,30 @@ fi
 if [ "$ro_cache" -eq 0 ]; then
   mkdir -p "$home_dir/.cache"
   extra_writable+=("$home_dir/.cache")
+fi
+
+if [ "$ro_conda" -eq 0 ]; then
+  add_writable_dir "$home_dir/.conda"
+  add_writable_dir "$home_dir/.mamba"
+  add_writable_dir "$home_dir/.micromamba"
+
+  for conda_dir in \
+    "$home_dir/anaconda3" \
+    "$home_dir/miniconda3" \
+    "$home_dir/miniforge3" \
+    "$home_dir/mambaforge" \
+    "$home_dir/micromamba"
+  do
+    add_existing_writable "$conda_dir"
+  done
+
+  [ -n "${MAMBA_ROOT_PREFIX:-}" ] && add_writable_dir "$MAMBA_ROOT_PREFIX"
+  add_colon_writable_dirs "${CONDA_ENVS_PATH:-}"
+  add_colon_writable_dirs "${CONDA_PKGS_DIRS:-}"
+  add_tool_prefix_writable conda
+  add_tool_prefix_writable mamba
+  add_conda_base_writable conda
+  add_conda_base_writable mamba
 fi
 
 if [ "$ro_vscode" -eq 0 ]; then
@@ -207,8 +296,19 @@ if [ "$mount_cuda" -eq 1 ]; then
   done
 fi
 
+bound_writable=()
 for path in "${extra_writable[@]}"; do
   real_path=$(realpath "$path")
+  already_bound=0
+  for bound_path in "${bound_writable[@]}"; do
+    if [ "$bound_path" = "$real_path" ]; then
+      already_bound=1
+      break
+    fi
+  done
+  [ "$already_bound" -eq 1 ] && continue
+
+  bound_writable+=("$real_path")
   args+=(--bind "$real_path" "$real_path")
 done
 
