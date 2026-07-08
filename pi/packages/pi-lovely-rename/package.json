@@ -1,0 +1,63 @@
+{
+	"name": "@xl0/pi-lovely-rename",
+	"version": "0.1.0",
+	"description": "Automatically name Pi sessions from conversation context",
+	"license": "MIT",
+	"type": "module",
+	"publisher": "xl0",
+	"author": {
+		"name": "Alexey Zaytsev",
+		"url": "https://github.com/xl0",
+		"email": "alexey.zaytsev@gmail.com"
+	},
+	"homepage": "https://github.com/xl0/agent-files/tree/master/pi/packages/pi-lovely-rename#readme",
+	"bugs": {
+		"url": "https://github.com/xl0/agent-files/issues"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/xl0/agent-files.git",
+		"directory": "pi/packages/pi-lovely-rename"
+	},
+	"keywords": [
+		"pi-package",
+		"rename",
+		"sessions",
+		"pi"
+	],
+	"files": [
+		"extensions",
+		"README.md"
+	],
+	"scripts": {
+		"typecheck": "tsgo --noEmit",
+		"check": "npm run typecheck && npm run biome:check",
+		"release": "bun publish --access public",
+		"lint": "biome lint .",
+		"format": "biome format --write .",
+		"format:check": "biome format .",
+		"biome:check": "biome check ."
+	},
+	"dependencies": {
+		"@xl0/pi-lovely-config": "^0.1.1"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^2.4.14",
+		"@earendil-works/pi-ai": "^0.80.3",
+		"@earendil-works/pi-coding-agent": "^0.80.3",
+		"@earendil-works/pi-tui": "^0.80.3",
+		"@typescript/native-preview": "^7.0.0-dev.20260502.1",
+		"bun-types": "^1.3.13",
+		"typescript": "^6.0.3"
+	},
+	"peerDependencies": {
+		"@earendil-works/pi-ai": "*",
+		"@earendil-works/pi-coding-agent": "*",
+		"@earendil-works/pi-tui": "*"
+	},
+	"pi": {
+		"extensions": [
+			"./extensions"
+		]
+	}
+}
