@@ -17,8 +17,8 @@ const renameConfig = defineScopedConfig({
 	scope: "user",
 	schema: {
 		afterSteps: field.number(3, {
-			label: "Auto-rename after assistant turns",
-			description: "Automatically name unnamed sessions after this many assistant turns. Set to 0 to disable this trigger.",
+			label: "Auto-rename after user-agent turns",
+			description: "Automatically name unnamed sessions after this many user-agent turns. Set to 0 to disable this trigger.",
 			min: 0,
 			step: 1
 		}),
@@ -212,16 +212,24 @@ export default function (pi: ExtensionAPI) {
 
 		if (!config) return
 
-		let assistantTurns = 0
+		let userAgentTurns = 0
 		let consumedTokens = 0
 		for (const entry of ctx.sessionManager.getBranch()) {
-			if (entry.type !== "message" || entry.message.role !== "assistant") continue
-			assistantTurns += 1
-			const usage = entry.message.usage
-			consumedTokens += usage.totalTokens > 0 ? usage.totalTokens : usage.input + usage.output + usage.cacheRead + usage.cacheWrite
+			if (entry.type !== "message") continue
+
+			switch (entry.message.role) {
+				case "user":
+					userAgentTurns += 1
+					break
+				case "assistant": {
+					const usage = entry.message.usage
+					consumedTokens += usage.totalTokens > 0 ? usage.totalTokens : usage.input + usage.output + usage.cacheRead + usage.cacheWrite
+					break
+				}
+			}
 		}
 
-		const stepTrigger = config.afterSteps > 0 && assistantTurns >= config.afterSteps
+		const stepTrigger = config.afterSteps > 0 && userAgentTurns >= config.afterSteps
 		const tokenTrigger = config.afterTokens > 0 && consumedTokens >= config.afterTokens
 		if (!stepTrigger && !tokenTrigger) return
 

@@ -20,7 +20,7 @@ The extension auto-renames a session only when it has no session name already. M
 
 Defaults:
 
-- rename after 3 assistant turns
+- rename after 3 user-agent turns
 - token trigger disabled
 
 Commands:
@@ -38,7 +38,7 @@ For explicit names, use Pi's built-in `/name <name>`.
 
 Fields:
 
-- `afterSteps`: assistant turns before auto-renaming. `0` disables this trigger.
+- `afterSteps`: user-agent turns before auto-renaming. `0` disables this trigger.
 - `afterTokens`: cumulative assistant-reported tokens before auto-renaming. `0` disables this trigger.
 - `prompt`: naming prompt prepended to the serialized conversation.
 
