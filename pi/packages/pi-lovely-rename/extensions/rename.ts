@@ -1,6 +1,12 @@
 import type { SimpleStreamOptions } from "@earendil-works/pi-ai"
 import { completeSimple } from "@earendil-works/pi-ai/compat"
-import type { ExtensionAPI, ExtensionCommandContext, ExtensionContext, SessionEntry } from "@earendil-works/pi-coding-agent"
+import {
+	type ExtensionAPI,
+	type ExtensionCommandContext,
+	type ExtensionContext,
+	type SessionEntry,
+	SettingsManager
+} from "@earendil-works/pi-coding-agent"
 import { defineScopedConfig, field, ScopedConfigEditor } from "@xl0/pi-lovely-config"
 
 const STATUS_KEY = "rename"
@@ -39,6 +45,40 @@ const renameConfig = defineScopedConfig({
 type RenameConfig = typeof renameConfig.defaults
 
 let config: RenameConfig | undefined
+
+function getSessionStreamOptions(
+	ctx: ExtensionContext
+): Pick<SimpleStreamOptions, "transport" | "websocketConnectTimeoutMs" | "sessionId" | "reasoning"> {
+	const settings = SettingsManager.create(ctx.cwd, undefined, { projectTrusted: ctx.isProjectTrusted() })
+	const websocketConnectTimeoutMs = settings.getWebSocketConnectTimeoutMs()
+	const reasoning = getCurrentReasoning(ctx.sessionManager.getBranch())
+	return {
+		sessionId: ctx.sessionManager.getSessionId(),
+		transport: settings.getTransport(),
+		...(reasoning === undefined ? {} : { reasoning }),
+		...(websocketConnectTimeoutMs === undefined ? {} : { websocketConnectTimeoutMs })
+	}
+}
+
+function getCurrentReasoning(branch: readonly SessionEntry[]): SimpleStreamOptions["reasoning"] | undefined {
+	for (let index = branch.length - 1; index >= 0; index -= 1) {
+		const entry = branch[index]
+		if (entry?.type !== "thinking_level_change") continue
+
+		switch (entry.thinkingLevel) {
+			case "minimal":
+			case "low":
+			case "medium":
+			case "high":
+			case "xhigh":
+				return entry.thinkingLevel
+			default:
+				return undefined
+		}
+	}
+
+	return undefined
+}
 
 function buildConversationText(branch: readonly SessionEntry[]): string {
 	const sections: string[] = []
@@ -144,7 +184,8 @@ async function generateSessionName(ctx: ExtensionContext, config: RenameConfig):
 	if (!auth.ok) throw new Error(auth.error)
 
 	const options: SimpleStreamOptions = {
-		maxTokens: 64
+		maxTokens: 64,
+		...getSessionStreamOptions(ctx)
 	}
 	if (auth.apiKey) options.apiKey = auth.apiKey
 	if (auth.headers) options.headers = auth.headers
