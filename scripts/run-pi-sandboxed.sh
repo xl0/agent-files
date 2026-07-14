@@ -15,6 +15,7 @@ Usage: $prog_name [--no-ssh] [--no-runtime] [--ro-runtime] [--ro-bun] [--ro-npm]
 
 Runs 'pi' in bubblewrap by default.
 Use '-- COMMAND ...' to run something other than 'pi'.
+When pi is run implicitly, appends a system prompt describing the sandbox.
 
 Bubblewrap setup:
 - host / mounted read-only
@@ -312,5 +313,22 @@ for path in "${extra_writable[@]}"; do
   bound_writable+=("$real_path")
   args+=(--bind "$real_path" "$real_path")
 done
+
+if [ "$command_mode" -eq 0 ]; then
+  sandbox_prompt="You are running inside a bubblewrap sandbox.
+The host filesystem is read-only except for these writable mount points:
+- $repo_dir (current repository)
+- /tmp -> $sandbox_tmp_dir
+- /var/tmp -> $sandbox_var_tmp_dir"
+
+  for path in "${bound_writable[@]}"; do
+    [ "$path" = "$repo_dir" ] && continue
+    sandbox_prompt+=$'\n- '"$path"
+  done
+
+  sandbox_prompt+=$'\nIf you run into a sandbox limitation, pause the current task and ask the user to adjust the sandbox'
+
+  set -- "$1" --append-system-prompt "$sandbox_prompt" "${@:2}"
+fi
 
 exec bwrap "${args[@]}" -- "$@"
