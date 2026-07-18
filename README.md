@@ -89,3 +89,24 @@ Examples:
   scripts/run-pi-sandboxed.sh --no-cuda
   scripts/run-pi-sandboxed.sh -- bash -lc 'uname -a'
 ```
+
+# Claude Code
+
+`scripts/run-claude-sandboxed.sh` is the Claude Code equivalent of the Pi
+sandbox helper. It runs `claude` by default, stores sandbox temporary files
+under the repository's `.claude/sandbox/` directory, and keeps
+`CLAUDE_CONFIG_DIR` writable (`~/.claude` by default). Claude is run with that
+variable set explicitly so its state file, lock, and atomic-update temporary
+files all live in the writable directory. The legacy `~/.claude.json` is
+imported on first run. The script supports the same sandbox options and
+`-- COMMAND ...` escape hatch as `run-pi-sandboxed.sh`. For implicit Claude
+invocations, it enables `--dangerously-skip-permissions` because filesystem
+access is constrained by bubblewrap.
+
+Copy it somewhere in your `$PATH`:
+
+```sh
+cp scripts/run-claude-sandboxed.sh ~/.local/bin/
+```
+
+Run `scripts/run-claude-sandboxed.sh --help` for full usage.
