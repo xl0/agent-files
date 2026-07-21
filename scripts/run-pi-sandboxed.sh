@@ -24,6 +24,7 @@ Bubblewrap setup:
 - repo .pi/sandbox/var-tmp mounted at /var/tmp
 - network allowed by default
 - ~/.pi mounted read-write by default
+- CLAUDE_CONFIG_DIR mounted read-write (~/.claude by default)
 - ~/.bun mounted read-write by default
 - ~/.npm mounted read-write by default
 - ~/.cache mounted read-write by default
@@ -202,6 +203,14 @@ add_conda_base_writable() {
 
 mkdir -p "$home_dir/.pi"
 extra_writable+=("$home_dir/.pi")
+
+claude_config_dir=$(realpath -m "${CLAUDE_CONFIG_DIR:-$home_dir/.claude}")
+if [ "$claude_config_dir" = "$home_dir" ]; then
+  echo "CLAUDE_CONFIG_DIR must not be HOME; that would make all of HOME writable" >&2
+  exit 1
+fi
+mkdir -p "$claude_config_dir"
+extra_writable+=("$claude_config_dir")
 
 if [ "$ro_bun" -eq 0 ]; then
   mkdir -p "$home_dir/.bun"

@@ -28,7 +28,7 @@ Then edit the new `AGENTS.md`, and optionally feed the edits back here if they a
 
 `scripts/run-pi-sandboxed.sh` provides a simple bubblewrap (https://github.com/containers/bubblewrap)
 
-It mounts / read-only, keeps ~/.pi, ~/.bun, ~/.npm, ~/.cache, conda/mamba dirs, VS Code user-data dirs, ~/node_modules, and XDG_RUNTIME_DIR writable by default, mounts NVIDIA device nodes when present, and runs pi inside the sandbox. Very easy, reasonably secure.
+It mounts / read-only, keeps ~/.pi, Claude's config directory, ~/.bun, ~/.npm, ~/.cache, conda/mamba dirs, VS Code user-data dirs, ~/node_modules, and XDG_RUNTIME_DIR writable by default, mounts NVIDIA device nodes when present, and runs pi inside the sandbox. Very easy, reasonably secure.
 Escape is not impossible, but it protects against lots of oopsies.
 
 Copy it somewhere in your $PATH: `cp scripts/run-pi-sandboxed.sh ~/.local/bin/`
@@ -47,6 +47,7 @@ Bubblewrap setup:
 - repo .pi/sandbox/var-tmp mounted at /var/tmp
 - network allowed by default
 - ~/.pi mounted read-write by default
+- CLAUDE_CONFIG_DIR mounted read-write (~/.claude by default)
 - ~/.bun mounted read-write by default
 - ~/.npm mounted read-write by default
 - ~/.cache mounted read-write by default
@@ -98,10 +99,11 @@ under the repository's `.claude/sandbox/` directory, and keeps
 `CLAUDE_CONFIG_DIR` writable (`~/.claude` by default). Claude is run with that
 variable set explicitly so its state file, lock, and atomic-update temporary
 files all live in the writable directory. The legacy `~/.claude.json` is
-imported on first run. The script supports the same sandbox options and
-`-- COMMAND ...` escape hatch as `run-pi-sandboxed.sh`. For implicit Claude
-invocations, it enables `--dangerously-skip-permissions` because filesystem
-access is constrained by bubblewrap.
+imported on first run, and `~/.pi` is also mounted read-write. The script
+supports the same sandbox options and `-- COMMAND ...` escape hatch as
+`run-pi-sandboxed.sh`. For implicit Claude invocations, it enables
+`--dangerously-skip-permissions` because filesystem access is constrained by
+bubblewrap.
 
 Copy it somewhere in your `$PATH`:
 

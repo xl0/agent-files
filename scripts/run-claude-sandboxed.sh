@@ -26,6 +26,7 @@ Bubblewrap setup:
 - network allowed by default
 - CLAUDE_CONFIG_DIR mounted read-write (~/.claude by default)
 - legacy ~/.claude.json imported into CLAUDE_CONFIG_DIR on first run
+- ~/.pi mounted read-write by default
 - ~/.bun mounted read-write by default
 - ~/.npm mounted read-write by default
 - ~/.cache mounted read-write by default
@@ -225,6 +226,9 @@ add_conda_base_writable() {
 }
 
 extra_writable+=("$claude_config_dir")
+
+mkdir -p "$home_dir/.pi"
+extra_writable+=("$home_dir/.pi")
 
 if [ "$ro_bun" -eq 0 ]; then
   mkdir -p "$home_dir/.bun"
