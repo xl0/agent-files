@@ -30,6 +30,8 @@ Bubblewrap setup:
 - ~/.bun mounted read-write by default
 - ~/.npm mounted read-write by default
 - ~/.cache mounted read-write by default
+- Isaac/Omniverse dirs (~/.nv, ~/.nvidia-omniverse, ~/.local/share/ov,
+  ~/Documents/Kit, ~/.isaac-agent) mounted read-write
 - conda/mamba dirs mounted read-write by default
 - VS Code user-data dirs mounted read-write by default if present
 - ~/.config/matplotlib hidden behind an empty writable tmpfs
@@ -229,6 +231,14 @@ extra_writable+=("$claude_config_dir")
 
 mkdir -p "$home_dir/.pi"
 extra_writable+=("$home_dir/.pi")
+
+# Isaac Sim / Omniverse state (Kit caches under ~/.cache are covered by the
+# default ~/.cache mount). ~/.isaac-agent holds isaac-agent protocol lockfiles.
+add_writable_dir "$home_dir/.nv"
+add_writable_dir "$home_dir/.nvidia-omniverse"
+add_writable_dir "$home_dir/.local/share/ov"
+add_writable_dir "$home_dir/Documents/Kit"
+add_writable_dir "$home_dir/.isaac-agent"
 
 if [ "$ro_bun" -eq 0 ]; then
   mkdir -p "$home_dir/.bun"
