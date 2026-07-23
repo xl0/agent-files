@@ -15,7 +15,9 @@ Usage: $prog_name [--no-ssh] [--no-runtime] [--ro-runtime] [--ro-bun] [--ro-npm]
 
 Runs 'claude' in bubblewrap by default.
 Use '-- COMMAND ...' to run something other than 'claude'.
-When claude is run implicitly, appends a system prompt describing the sandbox.
+When claude is run implicitly, 'claude update' runs on the host first (the
+install directory is read-only inside the sandbox) and a system prompt
+describing the sandbox is appended.
 Claude permission checks are skipped because filesystem access is constrained by bubblewrap.
 
 Bubblewrap setup:
@@ -115,6 +117,12 @@ elif [ "$#" -eq 0 ]; then
   set -- claude
 else
   set -- claude "$@"
+fi
+
+# Self-update before entering the sandbox; the install directory is read-only
+# inside it.
+if [ "$command_mode" -eq 0 ] && command -v claude >/dev/null 2>&1; then
+  claude update || echo "claude update failed; continuing" >&2
 fi
 
 repo_dir=$(pwd -P)
