@@ -10,8 +10,8 @@ fi
 
 print_help() {
   cat >&2 <<EOF
-Usage: $prog_name [--no-ssh] [--no-runtime] [--ro-runtime] [--ro-bun] [--ro-npm] [--ro-cache] [--ro-conda] [--ro-vscode] [--ro-node-modules] [--no-cuda] [--writable PATH ...] [CLAUDE_ARG ...]
-       $prog_name [--no-ssh] [--no-runtime] [--ro-runtime] [--ro-bun] [--ro-npm] [--ro-cache] [--ro-conda] [--ro-vscode] [--ro-node-modules] [--no-cuda] [--writable PATH ...] [-- COMMAND [ARG ...]]
+Usage: $prog_name [--no-ssh] [--no-ssh-agent] [--no-runtime] [--ro-runtime] [--ro-bun] [--ro-npm] [--ro-cache] [--ro-conda] [--ro-vscode] [--ro-node-modules] [--no-cuda] [--writable PATH ...] [CLAUDE_ARG ...]
+       $prog_name [--no-ssh] [--no-ssh-agent] [--no-runtime] [--ro-runtime] [--ro-bun] [--ro-npm] [--ro-cache] [--ro-conda] [--ro-vscode] [--ro-node-modules] [--no-cuda] [--writable PATH ...] [-- COMMAND [ARG ...]]
 
 Runs 'claude' in bubblewrap by default.
 Use '-- COMMAND ...' to run something other than 'claude'.
@@ -37,10 +37,12 @@ Bubblewrap setup:
 - ~/.config/matplotlib hidden behind an empty writable tmpfs
 - ~/node_modules mounted read-write by default if present
 - XDG runtime dir mounted read-write by default
+- ssh agent socket re-bound at /tmp/ssh-auth.sock by default, so git over ssh works
 - NVIDIA device nodes mounted by default if present, so CUDA/nvidia-smi can work
 
 Options:
-  --no-ssh           hide ~/.ssh with an empty tmpfs
+  --no-ssh           hide ~/.ssh with an empty tmpfs; also disables agent forwarding
+  --no-ssh-agent     do not forward SSH_AUTH_SOCK into the sandbox
   --no-runtime       hide XDG_RUNTIME_DIR (/run/user/<uid>) with an empty tmpfs
                      default: mount XDG_RUNTIME_DIR read-write if present
   --ro-runtime       keep XDG_RUNTIME_DIR read-only
@@ -58,6 +60,7 @@ Options:
 Examples:
   $prog_name
   $prog_name --no-ssh
+  $prog_name --no-ssh-agent
   $prog_name --model sonnet
   $prog_name "prompt here"
   $prog_name --no-runtime -- claude
@@ -72,6 +75,7 @@ EOF
 }
 
 hide_ssh=0
+forward_ssh_agent=1
 hide_runtime_dir=0
 ro_runtime=0
 ro_bun=0
@@ -87,6 +91,7 @@ command_mode=0
 while [ "$#" -gt 0 ]; do
   case "$1" in
     --no-ssh) hide_ssh=1 ;;
+    --no-ssh-agent) forward_ssh_agent=0 ;;
     --no-runtime) hide_runtime_dir=1 ;;
     --ro-runtime) ro_runtime=1 ;;
     --ro-bun) ro_bun=1 ;;
@@ -302,6 +307,22 @@ args+=(--tmpfs "$home_dir/.config/matplotlib")
 
 if [ "$hide_ssh" -eq 1 ]; then
   args+=(--tmpfs "$home_dir/.ssh")
+  forward_ssh_agent=0
+fi
+
+# The agent socket usually lives under the host /tmp, which the sandbox replaces
+# with a repo-local dir, so its original path is unreachable inside. Re-bind it
+# to a fixed path under the sandbox /tmp instead of exposing the host /tmp.
+if [ "$forward_ssh_agent" -eq 1 ] && [ -n "${SSH_AUTH_SOCK:-}" ]; then
+  ssh_auth_sock=$(realpath -e "$SSH_AUTH_SOCK" 2>/dev/null || true)
+  if [ -n "$ssh_auth_sock" ] && [ -S "$ssh_auth_sock" ]; then
+    args+=(
+      --bind "$ssh_auth_sock" /tmp/ssh-auth.sock
+      --setenv SSH_AUTH_SOCK /tmp/ssh-auth.sock
+    )
+  else
+    echo "SSH_AUTH_SOCK is set but is not a socket; not forwarding the ssh agent" >&2
+  fi
 fi
 
 if [ "$ro_node_modules" -eq 0 ] && [ -e "$home_dir/node_modules" ]; then
