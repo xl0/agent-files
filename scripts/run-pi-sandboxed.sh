@@ -10,8 +10,8 @@ fi
 
 print_help() {
   cat >&2 <<EOF
-Usage: $prog_name [--no-ssh] [--no-ssh-agent] [--no-runtime] [--ro-runtime] [--ro-bun] [--ro-npm] [--ro-cache] [--ro-conda] [--ro-vscode] [--ro-node-modules] [--no-cuda] [--writable PATH ...] [PI_ARG ...]
-       $prog_name [--no-ssh] [--no-ssh-agent] [--no-runtime] [--ro-runtime] [--ro-bun] [--ro-npm] [--ro-cache] [--ro-conda] [--ro-vscode] [--ro-node-modules] [--no-cuda] [--writable PATH ...] [-- COMMAND [ARG ...]]
+Usage: $prog_name [--no-ssh] [--no-ssh-agent] [--no-runtime] [--ro-runtime] [--ro-bun] [--ro-npm] [--ro-cache] [--ro-rust] [--ro-conda] [--ro-vscode] [--ro-node-modules] [--no-cuda] [--writable PATH ...] [PI_ARG ...]
+       $prog_name [--no-ssh] [--no-ssh-agent] [--no-runtime] [--ro-runtime] [--ro-bun] [--ro-npm] [--ro-cache] [--ro-rust] [--ro-conda] [--ro-vscode] [--ro-node-modules] [--no-cuda] [--writable PATH ...] [-- COMMAND [ARG ...]]
 
 Runs 'pi' in bubblewrap by default.
 Use '-- COMMAND ...' to run something other than 'pi'.
@@ -28,6 +28,7 @@ Bubblewrap setup:
 - ~/.bun mounted read-write by default
 - ~/.npm mounted read-write by default
 - ~/.cache mounted read-write by default
+- Cargo and rustup homes (~/.cargo and ~/.rustup by default) mounted read-write
 - Isaac/Omniverse dirs (~/.nv, ~/.nvidia-omniverse, ~/.local/share/ov,
   ~/Documents/Kit, ~/.isaac-agent) mounted read-write
 - conda/mamba dirs mounted read-write by default
@@ -47,6 +48,8 @@ Options:
   --ro-bun           keep ~/.bun read-only; default: mount ~/.bun read-write if HOME exists
   --ro-npm           keep ~/.npm read-only; default: mount ~/.npm read-write if HOME exists
   --ro-cache         keep ~/.cache read-only; default: mount ~/.cache read-write if HOME exists
+  --ro-rust          keep Cargo/rustup homes read-only; default: mount CARGO_HOME
+                     and RUSTUP_HOME (~/.cargo and ~/.rustup) read-write
   --ro-conda         keep conda/mamba dirs read-only; default: mount ~/.conda,
                      ~/.mamba, detected roots, and configured env/pkg dirs read-write
   --ro-vscode        keep VS Code user-data dirs read-only; default: mount existing dirs read-write
@@ -66,6 +69,7 @@ Examples:
   $prog_name --ro-bun
   $prog_name --ro-npm
   $prog_name --ro-cache
+  $prog_name --ro-rust
   $prog_name --ro-conda
   $prog_name --ro-vscode
   $prog_name --ro-node-modules
@@ -79,6 +83,7 @@ ro_runtime=0
 ro_bun=0
 ro_npm=0
 ro_cache=0
+ro_rust=0
 ro_conda=0
 ro_vscode=0
 ro_node_modules=0
@@ -95,6 +100,7 @@ while [ "$#" -gt 0 ]; do
     --ro-bun) ro_bun=1 ;;
     --ro-npm) ro_npm=1 ;;
     --ro-cache) ro_cache=1 ;;
+    --ro-rust) ro_rust=1 ;;
     --ro-conda) ro_conda=1 ;;
     --ro-vscode) ro_vscode=1 ;;
     --ro-node-modules) ro_node_modules=1 ;;
@@ -240,6 +246,11 @@ fi
 if [ "$ro_cache" -eq 0 ]; then
   mkdir -p "$home_dir/.cache"
   extra_writable+=("$home_dir/.cache")
+fi
+
+if [ "$ro_rust" -eq 0 ]; then
+  add_writable_dir "${CARGO_HOME:-$home_dir/.cargo}"
+  add_writable_dir "${RUSTUP_HOME:-$home_dir/.rustup}"
 fi
 
 if [ "$ro_conda" -eq 0 ]; then
