@@ -16,6 +16,10 @@ Don't put too much on one line, keep things readable.
 
 # Guidelines
 
+IMPORTANT:
+
+- Never run npm packages that are not explicitly installed (using npx/bunx). Be cautious of supply chain attacks. If you want to run such tool, always confirm with the user instead of working around this limitation. The same applies to Python. 
+
 ## Tone
 
 - Be brief, be terse. Sacrifice grammar for brevity.
@@ -50,6 +54,6 @@ Don't put too much on one line, keep things readable.
 
 ### Git
 
-- Only commit when directly instructed. 
+- Don't commit, unless the user explicitly instructed you. Our default workflow is work work work (often user in the loop), then test, often manually, then commit. The user may override this.  
 - When you commit, it's possible that the worktree contains unrelated changes and untracked files. Don't blindly add files - only commit what's necessary.
 - **NEVER** use destructive commands like `git reset --hard` or `git checkout --` unless specifically requested or approved by the user.
