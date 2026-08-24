@@ -32,7 +32,7 @@
 	"scripts": {
 		"typecheck": "tsgo --noEmit",
 		"check": "npm run typecheck && npm run biome:check",
-		"release": "bun publish --access public",
+		"release": "bun ../../../scripts/release.ts pi-lovely-rename",
 		"lint": "biome lint .",
 		"format": "biome format --write .",
 		"format:check": "biome format .",

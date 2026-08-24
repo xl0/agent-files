@@ -36,7 +36,7 @@
 	"scripts": {
 		"typecheck": "tsgo --noEmit",
 		"check": "bun run typecheck && bun run biome:check",
-		"release": "bun publish --access public",
+		"release": "bun ../../../scripts/release.ts pi-lovely-comment",
 		"lint": "biome lint .",
 		"format": "biome format --write .",
 		"format:check": "biome format .",
