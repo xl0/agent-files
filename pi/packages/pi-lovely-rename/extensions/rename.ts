@@ -51,33 +51,13 @@ function getSessionStreamOptions(
 ): Pick<SimpleStreamOptions, "transport" | "websocketConnectTimeoutMs" | "sessionId" | "reasoning"> {
 	const settings = SettingsManager.create(ctx.cwd, undefined, { projectTrusted: ctx.isProjectTrusted() })
 	const websocketConnectTimeoutMs = settings.getWebSocketConnectTimeoutMs()
-	const reasoning = getCurrentReasoning(ctx.sessionManager.getBranch())
 	return {
 		sessionId: ctx.sessionManager.getSessionId(),
 		transport: settings.getTransport(),
-		...(reasoning === undefined ? {} : { reasoning }),
+		// Naming needs no deliberation; don't inherit the session's thinking level
+		reasoning: "minimal",
 		...(websocketConnectTimeoutMs === undefined ? {} : { websocketConnectTimeoutMs })
 	}
-}
-
-function getCurrentReasoning(branch: readonly SessionEntry[]): SimpleStreamOptions["reasoning"] | undefined {
-	for (let index = branch.length - 1; index >= 0; index -= 1) {
-		const entry = branch[index]
-		if (entry?.type !== "thinking_level_change") continue
-
-		switch (entry.thinkingLevel) {
-			case "minimal":
-			case "low":
-			case "medium":
-			case "high":
-			case "xhigh":
-				return entry.thinkingLevel
-			default:
-				return undefined
-		}
-	}
-
-	return undefined
 }
 
 function buildConversationText(branch: readonly SessionEntry[]): string {
@@ -184,7 +164,9 @@ async function generateSessionName(ctx: ExtensionContext, config: RenameConfig):
 	if (!auth.ok) throw new Error(auth.error)
 
 	const options: SimpleStreamOptions = {
-		maxTokens: 64,
+		// Generous cap: reasoning models may think before answering, and
+		// sanitizeName only keeps the first line anyway
+		maxTokens: 1024,
 		...getSessionStreamOptions(ctx)
 	}
 	if (auth.apiKey) options.apiKey = auth.apiKey
