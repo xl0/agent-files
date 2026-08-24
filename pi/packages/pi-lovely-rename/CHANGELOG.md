@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.1.4] - 2026-08-24
+
 ### Fixed
 
 - Give the naming model room to answer: the request runs at minimal reasoning with a 1024-token cap instead of the session's thinking level with a 64-token cap, which left reasoning models unable to emit a name.
