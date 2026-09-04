@@ -2,8 +2,7 @@
 
 First, this repo is for my own reference. You are welcome to ride along.
 
-For each new project, I copy stuff from here to the project.
-I avoid global skills/AGENTS.md/etc, everything is per-project.
+
 
 ## AGENTS.md
 
