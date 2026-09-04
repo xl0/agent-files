@@ -1,5 +1,4 @@
 import type { SimpleStreamOptions } from "@earendil-works/pi-ai"
-import { completeSimple } from "@earendil-works/pi-ai/compat"
 import {
 	type ExtensionAPI,
 	type ExtensionCommandContext,
@@ -173,8 +172,15 @@ async function generateSessionName(ctx: ExtensionContext, config: RenameConfig):
 	if (auth.headers) options.headers = auth.headers
 	if (auth.env) options.env = auth.env
 
-	const response = await completeSimple(
-		model,
+	// Extension-registered providers live in the model registry only: their custom
+	// `api` values are absent from pi-ai's global compat table, so stream through
+	// the owning provider instead of the global `completeSimple`.
+	const provider = ctx.modelRegistry.getProvider(model.provider)
+	if (!provider) throw new Error(`Provider not registered: ${model.provider}`)
+	const requestModel = auth.baseUrl ? { ...model, baseUrl: auth.baseUrl } : model
+
+	const stream = provider.streamSimple(
+		requestModel,
 		{
 			systemPrompt: NAMING_SYSTEM_PROMPT,
 			messages: [
@@ -187,6 +193,7 @@ async function generateSessionName(ctx: ExtensionContext, config: RenameConfig):
 		},
 		options
 	)
+	const response = await stream.result()
 
 	if (response.stopReason === "error") throw new Error(response.errorMessage || "Naming model returned an error")
 	if (response.stopReason === "aborted") throw new Error("Naming was aborted")
