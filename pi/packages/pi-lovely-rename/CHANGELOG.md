@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- Route the naming request through the model registry provider instead of pi-ai's global compat table, so extension-registered providers (e.g. pi-model-auto-router) work.
+
 ## [0.1.4] - 2026-08-24
 
 ### Fixed
