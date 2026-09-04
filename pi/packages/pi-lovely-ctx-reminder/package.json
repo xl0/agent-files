@@ -1,0 +1,57 @@
+{
+	"name": "@xl0/pi-lovely-ctx-reminder",
+	"version": "0.1.0",
+	"description": "Remind the model when context usage crosses 25/50/75/85/95% thresholds",
+	"license": "MIT",
+	"type": "module",
+	"publisher": "xl0",
+	"author": {
+		"name": "Alexey Zaytsev",
+		"url": "https://github.com/xl0",
+		"email": "alexey.zaytsev@gmail.com"
+	},
+	"homepage": "https://github.com/xl0/agent-files/tree/master/pi/packages/pi-lovely-ctx-reminder#readme",
+	"bugs": {
+		"url": "https://github.com/xl0/agent-files/issues"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/xl0/agent-files.git",
+		"directory": "pi/packages/pi-lovely-ctx-reminder"
+	},
+	"keywords": [
+		"pi-package",
+		"context",
+		"pi"
+	],
+	"files": [
+		"extensions",
+		"README.md"
+	],
+	"scripts": {
+		"typecheck": "tsgo --noEmit",
+		"check": "bun run typecheck && bun run biome:check",
+		"release": "bun ../../../scripts/release.ts pi-lovely-ctx-reminder",
+		"lint": "biome lint .",
+		"format": "biome format --write .",
+		"format:check": "biome format .",
+		"biome:check": "biome check ."
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^2.4.14",
+		"@earendil-works/pi-coding-agent": "^0.84.4",
+		"@earendil-works/pi-tui": "^0.84.4",
+		"@typescript/native-preview": "^7.0.0-dev.20260502.1",
+		"bun-types": "^1.3.13",
+		"typescript": "^6.0.3"
+	},
+	"peerDependencies": {
+		"@earendil-works/pi-coding-agent": "*",
+		"@earendil-works/pi-tui": "*"
+	},
+	"pi": {
+		"extensions": [
+			"./extensions"
+		]
+	}
+}
